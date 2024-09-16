@@ -17,4 +17,17 @@ logs/
 # OS or editor-specific files
 .DS_Store
 .vscode/
+.idea/
 
+# Build directories
+server/routes/static/build_baldwin_web_app_1/
+server/routes/static/build_splice_log_page/
+server/routes/static/splice_log_page/
+
+# Generated static files
+server/routes/static/**/*.js
+server/routes/static/**/*.css
+server/routes/static/**/*.map
+
+# Environment and config files
+.env
