@@ -8,8 +8,8 @@
     "react-scripts": "5.0.1"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
+    "start": "sudo npm link on ../shared_data&& npm link shared_data&& set PORT=3001 && react-scripts start",
+    "build": "set BUILD_PATH=../server/routes/static/build_baldwin_web_app_1&& react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
