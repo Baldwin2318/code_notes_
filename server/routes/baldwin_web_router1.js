@@ -23,7 +23,7 @@ const splice_log_db = new pg.Pool({
 async function get_info_from_db(response) {
   const client = await baldwin_web_db.connect();
   try {
-    const result = await client.query('SELECT id, uuid, title FROM baldwin_web.sample_code'); // example query
+    const result = await client.query('SELECT id, uuid, title FROM code_notes.codes'); // example query
     
     const data = {}
     result.rows.forEach((row) => {
@@ -47,7 +47,7 @@ async function get_info_of_selectedCode_from_db(response, id, uuid) {
   try {
     
     // Use parameterized queries to avoid SQL injection and formatting issues
-    const query = `SELECT * FROM baldwin_web.sample_code WHERE id = $1 AND uuid = $2`;
+    const query = `SELECT * FROM code_notes.codes WHERE id = $1 AND uuid = $2`;
     
     // Execute the query with parameters
     const result = await client.query(query, [parseInt(id, 10), uuid]);
@@ -66,7 +66,7 @@ async function transfer_info_to_db(data) {
   try {
     setTimeout(() => {
       const escapeString = (str) => str.replace(/'/g, "''");
-      const result = client.query(`INSERT INTO baldwin_web.sample_code (uuid, code, comment, title, date_time_infosaved) VALUES ('${data.uuid}', '${escapeString(data.code)}', '${escapeString(data.comment)}', '${data.title}', '${data.date}')`);
+      const result = client.query(`INSERT INTO code_notes.codes (uuid, code, comment, title, date_time_infosaved) VALUES ('${data.uuid}', '${escapeString(data.code)}', '${escapeString(data.comment)}', '${data.title}', '${data.date}')`);
     }, 1)
 
   } catch (err) {
@@ -82,7 +82,7 @@ async function remove_item_from_db(response, id, uuid) {
   try {
     
     // Use parameterized queries to avoid SQL injection and formatting issues
-    const query = `DELETE FROM baldwin_web.sample_code WHERE id = $1 AND uuid = $2`;
+    const query = `DELETE FROM code_notes.codes WHERE id = $1 AND uuid = $2`;
     
     // Execute the query with parameters
     const result = await client.query(query, [parseInt(id, 10), uuid]);
