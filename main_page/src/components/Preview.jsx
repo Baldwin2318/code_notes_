@@ -81,7 +81,7 @@ function Preview({ selectedCode, setSelectedCode }) {
             <textarea value={data.code} style={{ height: 500, width: '100%', fontSize: 15, border: 0, background: '#e0e0e0' }}></textarea>
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <label style={{ color: 'darkblue' }}>{data.date_time_infosaved}</label></div>
-            <textarea value={data.comment} style={{ height: '80%', width: 1100, fontSize: 15, border: 0, color: 'lightgray', background: 'transparent' }}></textarea>
+            <textarea value={data.comment} style={{ height: '80%', width: '100%', fontSize: 15, border: 0, color: 'lightgray', background: 'transparent' }}></textarea>
            
 
           { popUpVisible && <ConfirmationAlert togglePopup={handlePopupVisible} handleFunction={handleRemoveCode} msg={`Are you sure you want to permanently remove`} selectedItem={data.title} yesColor={'red'}/>}
