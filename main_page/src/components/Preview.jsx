@@ -67,7 +67,7 @@ function Preview({ selectedCode, setSelectedCode }) {
     }, [selectedCode]);
 
     return(
-        <div style={{  background: 'transparent', padding: 10, border: 0, marginLeft: 5, width: 1110, height: 750 }}>
+        <div style={{  background: 'transparent', padding: 10, border: 0, marginLeft: 5, width: '100%', height: 750 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <h2 style={{ color: 'darkblue' }}>{data.title}</h2>
             </div>
