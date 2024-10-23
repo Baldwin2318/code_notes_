@@ -9,8 +9,8 @@ const SERVER_CRITICAL_DATA = {
   BUILD_PATH: `${__dirname}/build/`,
   DATABASE_HOST: 'localhost',
   DATABASE_USER: 'postgres',
-  DATABASE_PW: 'aiieaaaa',
-  CODE_NOTES_DATABASE: 'baldwin_web_db',
+  DATABASE_PW: 'b_malab',
+  CODE_NOTES_DATABASE: 'code_notes_db',
   SPLICE_LOG_DATABASE: 'postgres',
   DEBUG_STATE: false
 };
