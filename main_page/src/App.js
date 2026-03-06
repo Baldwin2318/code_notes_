@@ -6,6 +6,7 @@ import HeroSection from './components/portfolio/HeroSection';
 import AboutSection from './components/portfolio/AboutSection';
 import StackSection from './components/portfolio/StackSection';
 import ProjectsSection from './components/portfolio/ProjectsSection';
+import ProjectsSectionV2 from './components/portfolio/ProjectsSectionV2';
 import ContactSection from './components/portfolio/ContactSection';
 import { fallbackProfile, fallbackProjects, navLinks, techMeta } from './components/portfolio/constants';
 import useTyping from './hooks/useTyping';
@@ -95,7 +96,8 @@ function App() {
         <HeroSection profile={profile} typedRole={typedRole} />
         <AboutSection bio={profile.bio || ''} />
         <StackSection stack={topStack} techMeta={techMeta} />
-        <ProjectsSection projects={projects} />
+        // <ProjectsSection projects={projects} />
+        <ProjectsSectionV2 projects={projects} />
         <ContactSection
           email={profile.email || ''}
           github={profile.github || profile.github_url || ''}
