@@ -8,6 +8,7 @@ import StackSection from './components/portfolio/StackSection';
 import StackSectionV2 from './components/portfolio/StackSectionV2';
 import ProjectsSection from './components/portfolio/ProjectsSection';
 import ProjectsSectionV2 from './components/portfolio/ProjectsSectionV2';
+import ProjectSectionGithub from './components/portfolio/ProjectSectionGithub';
 import ContactSection from './components/portfolio/ContactSection';
 import { fallbackProfile, fallbackProjects, navLinks } from './components/portfolio/constants';
 import useTyping from './hooks/useTyping';
@@ -18,17 +19,19 @@ function App() {
   const [bannerConfig, setBannerConfig] = useState(null);
   const [scrolled, setScrolled] = useState(false);
   const [technologies, setTechnologies] = useState([]);
+  const [githubProjects, setGithubProjects] = useState([]);
 
   const typedRole = useTyping(profile?.role_title ? [profile.role_title] : [], 75, 1800);
 
   useEffect(() => {
     async function loadPersonalMe() {
       try {
-        const [profileResponse, projectsResponse, bannerResponse, techResponse] = await Promise.all([
+        const [profileResponse, projectsResponse, bannerResponse, techResponse, githubProjectsResponse] = await Promise.all([
           fetch(`${SERVER_URL}/api/personal_me/profile`),
           fetch(`${SERVER_URL}/api/personal_me/projects`),
           fetch(`${SERVER_URL}/api/config/dev-banner`),
-          fetch(`${SERVER_URL}/api/personal_me/technologies`)
+          fetch(`${SERVER_URL}/api/personal_me/technologies`),
+          fetch(`${SERVER_URL}/api/personal_me/github/projects`)
         ]);
 
         if (profileResponse.ok) {
@@ -51,10 +54,15 @@ function App() {
             setBannerConfig(bannerData);
           }
         }
-        
+
         if (techResponse.ok) {
           const techData = await techResponse.json();
           if (Array.isArray(techData)) setTechnologies(techData);
+        }
+
+        if (githubProjectsResponse.ok) {
+          const githubProjectsData = await githubProjectsResponse.json();
+          if (Array.isArray(githubProjectsData)) setGithubProjects(githubProjectsData);
         }
       } catch (error) {
         // Keep content blank if API is unavailable.
@@ -116,6 +124,7 @@ function App() {
         <StackSectionV2 stack={profile.tech_stack || []} techMeta={techMeta} />
         {/* <ProjectsSection projects={projects} /> */}
         <ProjectsSectionV2 projects={projects} />
+        <ProjectSectionGithub projects={githubProjects} />
         <ContactSection
           email={profile.email || ''}
           github={profile.github || profile.github_url || ''}
