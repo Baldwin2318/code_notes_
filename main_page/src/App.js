@@ -113,7 +113,7 @@ function App() {
         <HeroSection profile={profile} typedRole={typedRole} />
         <AboutSection bio={profile.bio || ''} />
         {/* <StackSection stack={topStack} techMeta={techMeta} /> */}
-        <StackSectionV2 stack={topStack} techMeta={techMeta} />
+        <StackSectionV2 stack={profile.tech_stack || []} techMeta={techMeta} />
         {/* <ProjectsSection projects={projects} /> */}
         <ProjectsSectionV2 projects={projects} />
         <ContactSection
