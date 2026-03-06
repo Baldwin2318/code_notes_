@@ -178,7 +178,7 @@ function baldwin_web_router1(app) {
     }
   });
 
-  app.get('/api/personal_me/projects', async (req, res) => {
+  app.get('/api/personal_me/github/projects', async (req, res) => {
     try {
       const response = await fetch(
         'https://api.github.com/users/Baldwin2318/repos?sort=updated&per_page=100'
