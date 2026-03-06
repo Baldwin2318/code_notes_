@@ -1,14 +1,12 @@
+const normalizeBaseUrl = (value) => {
+  if (!value) return '';
+  return String(value).trim().replace(/\/$/, '');
+};
 
-var url = window.location.origin;
+const explicitApiBase = normalizeBaseUrl(process.env.REACT_APP_API_BASE_URL);
 
-import SERVER_PORT from './common_critical_data.js';
-
-const port_index = url.lastIndexOf(':');
-
-url = url.substring(0, port_index);
-
-url += `:${SERVER_PORT}`;
-
-const SERVER_URL = url;
+// 1) Use explicit API base URL when provided.
+// 2) Otherwise default to same-origin so Render works out of the box.
+const SERVER_URL = explicitApiBase || window.location.origin;
 
 export default SERVER_URL;
