@@ -4,191 +4,163 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import critical_data from '../../shared_data/server_critical_data.js';
 
-const baldwin_web_db = new pg.Pool({
-  host: critical_data.DATABASE_HOST,
-  user: critical_data.DATABASE_USER,
-  max: 30,
-  password: critical_data.DATABASE_PW,
-  database: critical_data.CODE_NOTES_DATABASE
+const pool = new pg.Pool({
+  connectionString: critical_data.NEON_DATABASE_URL || undefined,
+  ssl: critical_data.NEON_DATABASE_URL ? { rejectUnauthorized: false } : false,
+  max: 20
 });
 
-const splice_log_db = new pg.Pool({
-  host: critical_data.DATABASE_HOST,
-  user: critical_data.DATABASE_USER,
-  max: 30,
-  password: critical_data.DATABASE_PW,
-  database: critical_data.SPLICE_LOG_DATABASE
-});
-
-async function get_info_from_db(response) {
-  const client = await baldwin_web_db.connect();
-  try {
-    const result = await client.query('SELECT id, uuid, title FROM code_notes.codes'); // example query
-    
-    const data = {}
-    result.rows.forEach((row) => {
-      const _title = row.title;
-      if (!data[_title]) data[_title] = [];
-      data[_title].push(row)
-    })
-
-    
-    if (response) response.json(data);
-  } catch (err) {
-    console.error('Query failed', err);
-    throw err;
-  } finally {
-    client.release();
+function getDbClient() {
+  if (!critical_data.NEON_DATABASE_URL) {
+    throw new Error('NEON_DATABASE_URL is missing. Add it before starting the server.');
   }
+
+  return pool.connect();
 }
 
-async function get_info_of_selectedCode_from_db(response, id, uuid) {
-  const client = await baldwin_web_db.connect();
-  try {
-    
-    // Use parameterized queries to avoid SQL injection and formatting issues
-    const query = `SELECT * FROM code_notes.codes WHERE id = $1 AND uuid = $2`;
-    
-    // Execute the query with parameters
-    const result = await client.query(query, [parseInt(id, 10), uuid]);
-
-    if (response) response.json(result.rows[0]);
-  } catch (err) {
-    console.error('Query failed', err);
-    throw err;
-  } finally {
-    client.release();
-  }
-}
-
-async function transfer_info_to_db(data) {
-  const client = await baldwin_web_db.connect();
-  try {
-    setTimeout(() => {
-      const escapeString = (str) => str.replace(/'/g, "''");
-      const result = client.query(`INSERT INTO code_notes.codes (uuid, code, comment, title, date_time_infosaved) VALUES ('${data.uuid}', '${escapeString(data.code)}', '${escapeString(data.comment)}', '${data.title}', '${data.date}')`);
-    }, 1)
-
-  } catch (err) {
-    console.error('Transfer to database failed', err);
-    throw err;
-  } finally {
-    client.release();
-  }
-}
-
-async function remove_item_from_db(response, id, uuid) {
-  const client = await baldwin_web_db.connect();
-  try {
-    
-    // Use parameterized queries to avoid SQL injection and formatting issues
-    const query = `DELETE FROM code_notes.codes WHERE id = $1 AND uuid = $2`;
-    
-    // Execute the query with parameters
-    const result = await client.query(query, [parseInt(id, 10), uuid]);
-
-    if (response) console.log('remove success');
-  } catch (err) {
-    console.error('Query failed', err);
-    throw err;
-  } finally {
-    client.release();
-  }
-}
-
-async function get_splice_logs_from_db(response){
-  const client = await splice_log_db.connect();
-
-  try
-  {
-    const result = await client.query(`SELECT id, station_id, splicer_sn, date_time_splicecompleted FROM splice_log.completed_splice`);
-
-    const splice_log_data = {};
-    result.rows.forEach((row, index) => {
-      // check existance of index from splcie_log_data object
-      if (!splice_log_data[`${index}`]) splice_log_data[`${index}`] = [];
-      
-      splice_log_data[`${index}`].push(row);
-    })
-
-    if (response) response.json(splice_log_data);
-  }
-  catch (err)
-  {
-    if (response) response.send(`Failed to get data of splice log ${err.stack}`);
-      console.error('Error fetching the data from database', err.stack);
-  }
-
-  client.release();
-}
-
-async function get_splice_logs_img_from_db(response, selected_id){
-  const client = await splice_log_db.connect();
-
-  try
-  {
-    if (!selected_id) return;
-    
-    const result = await client.query(`SELECT * FROM splice_log.completed_splice WHERE id = ${selected_id}`);
-    const splice_log_data = {};
-    result.rows.forEach((row, index) => {
-      // check existance of index from splcie_log_data object
-      if (!splice_log_data[`${index}`]) splice_log_data[`${index}`] = [];
-      
-      splice_log_data[`${index}`].push(row);
-    })
-
-    if (response) response.json(splice_log_data);
-  }
-  catch (err)
-  {
-    if (response) response.send(`Failed to get data of splice log ${err.stack}`);
-      console.error('Error fetching the data from database', err.stack);
-  }
-
-  client.release();
-}
-
-function unzip_images() {
-  
+function parseBoolean(value, fallback = false) {
+  if (value === null || value === undefined) return fallback;
+  const normalized = String(value).trim().toLowerCase();
+  if (['true', '1', 'yes', 'on'].includes(normalized)) return true;
+  if (['false', '0', 'no', 'off'].includes(normalized)) return false;
+  return fallback;
 }
 
 function baldwin_web_router1(app) {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
-  pg.types.setTypeParser(pg.types.builtins.TIMESTAMPTZ, val => val);
-  pg.types.setTypeParser(pg.types.builtins.TIMESTAMP, val => val);
 
-  app.get('/api/get_info_from_db', async (req, res) => {
-    get_info_from_db(res);
+  pg.types.setTypeParser(pg.types.builtins.TIMESTAMPTZ, (val) => val);
+  pg.types.setTypeParser(pg.types.builtins.TIMESTAMP, (val) => val);
+
+  app.get('/api/config/dev-banner', async (req, res) => {
+    let client;
+    try {
+      client = await getDbClient();
+
+      const [settingsResult, announcementResult] = await Promise.all([
+        client.query(
+          `
+            SELECT key, value
+            FROM config.site_settings
+            WHERE key IN ('banner_enabled', 'banner_message', 'github_url')
+          `
+        ),
+        client.query(
+          `
+            SELECT id, message, kind, dismissible, starts_at, ends_at
+            FROM config.announcements
+            WHERE active = TRUE
+              AND starts_at <= NOW()
+              AND (ends_at IS NULL OR ends_at >= NOW())
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1
+          `
+        )
+      ]);
+
+      const settingMap = settingsResult.rows.reduce((acc, row) => {
+        acc[row.key] = row.value;
+        return acc;
+      }, {});
+
+      const announcement = announcementResult.rows[0] || null;
+      const enabled = parseBoolean(settingMap.banner_enabled, false);
+
+      res.json({
+        enabled,
+        message: announcement?.message || settingMap.banner_message || '',
+        kind: announcement?.kind || 'dev',
+        dismissible: announcement?.dismissible ?? true,
+        github_url: settingMap.github_url || '',
+        starts_at: announcement?.starts_at || null,
+        ends_at: announcement?.ends_at || null
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    } finally {
+      if (client) client.release();
+    }
   });
 
-  app.get('/api/get_info_of_selectedCode_from_db/:id/:uuid', async (req, res) => {
-    const { id, uuid } = req.params;
-    get_info_of_selectedCode_from_db(res, id, uuid);
+  app.get('/api/personal_me/profile', async (req, res) => {
+    let client;
+    try {
+      client = await getDbClient();
+
+      const result = await client.query(`
+        WITH latest_about AS (
+          SELECT
+            id,
+            full_name,
+            title AS role_title,
+            bio,
+            photo_url AS avatar_url,
+            email,
+            github_url AS github,
+            linkedin_url AS linkedin,
+            location,
+            open_to_work,
+            created_at,
+            updated_at
+          FROM personal.about_me
+          ORDER BY updated_at DESC NULLS LAST, id DESC
+          LIMIT 1
+        ),
+        stack AS (
+          SELECT COALESCE(array_agg(name ORDER BY name), ARRAY[]::TEXT[]) AS tech_stack
+          FROM projects.technology
+        )
+        SELECT
+          latest_about.*,
+          stack.tech_stack
+        FROM latest_about
+        CROSS JOIN stack
+      `);
+
+      res.json(result.rows[0] || null);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    } finally {
+      if (client) client.release();
+    }
   });
 
-  app.post('/api/transfer_info_to_db', async (req, res) => {
-    const data = req.body;
-    transfer_info_to_db(data);
-  })
+  app.get('/api/personal_me/projects', async (req, res) => {
+    let client;
+    try {
+      client = await getDbClient();
+      const result = await client.query(`
+        SELECT
+          p.id,
+          p.name AS title,
+          p.description,
+          p.thumbnail_url AS image_url,
+          p.demo_url AS project_url,
+          p.github_url AS repo_url,
+          p.kind,
+          p.status,
+          p.built_date,
+          COALESCE(TO_CHAR(p.built_date, 'YYYY'), TO_CHAR(p.created_at, 'YYYY')) AS year,
+          COALESCE(
+            ARRAY_AGG(t.name ORDER BY t.name) FILTER (WHERE t.name IS NOT NULL),
+            ARRAY[]::TEXT[]
+          ) AS tags
+        FROM projects.project p
+        LEFT JOIN projects.project_technology pt ON pt.project_id = p.id
+        LEFT JOIN projects.technology t ON t.id = pt.technology_id
+        GROUP BY p.id
+        ORDER BY p.featured DESC, p.display_order ASC, p.built_date DESC NULLS LAST, p.id DESC
+      `);
 
-  app.post('/api/remove_item_from_db/:id/:uuid', async (req, res) => {
-    const { id, uuid } = req.params;
-    remove_item_from_db(req, id, uuid);
-  })
-
-  app.get('/api/get_splice_logs_from_db', (req, res) => {
-    get_splice_logs_from_db(res);
+      res.json(result.rows);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    } finally {
+      if (client) client.release();
+    }
   });
-  
-  app.get('/api/get_splice_logs_img_from_db/:id', (req, res) => {
-    const { id } = req.params;
 
-    get_splice_logs_img_from_db(res, id);
-  });
-
-  
   app.use(express.static(path.join(__dirname, '../routes/static/build_baldwin_web_app_1/')));
 }
 
