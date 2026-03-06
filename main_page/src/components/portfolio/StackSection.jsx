@@ -19,10 +19,11 @@ function StackSection({ stack, techMeta }) {
               key={item}
               className="group rounded-xl border border-slate-700/80 bg-slate-900/60 p-4 transition hover:-translate-y-0.5 hover:border-cyan-300/50"
             >
-              <div
-                className={`mb-3 inline-flex h-9 min-w-9 items-center justify-center rounded border px-2 font-mono text-xs ${meta.accent}`}
-              >
-                {meta.icon}
+              <div className={`mb-3 inline-flex h-9 min-w-9 items-center justify-center rounded border px-2 ${meta.accent}`}>
+                {meta.icon?.startsWith('http') 
+                  ? <img src={meta.icon} alt={item} className="h-5 w-5 object-contain" />
+                  : <span className="font-mono text-xs">{meta.icon}</span>
+                }
               </div>
               <p className="text-sm font-semibold text-slate-100">{item}</p>
             </div>
