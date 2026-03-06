@@ -178,6 +178,30 @@ function baldwin_web_router1(app) {
     }
   });
 
+  app.get('/api/personal_me/projects', async (req, res) => {
+    try {
+      const response = await fetch(
+        'https://api.github.com/users/Baldwin2318/repos?sort=updated&per_page=100'
+      );
+      const repos = await response.json();
+  
+      const projects = repos.map(repo => ({
+        id:          repo.id,
+        title:       repo.name,
+        description: repo.description || '',
+        repo_url:    repo.html_url,
+        project_url: repo.homepage || '',
+        year:        new Date(repo.created_at).getFullYear(),
+        status:      'active',
+        tags:        repo.topics || [],
+      }));
+  
+      res.json(projects);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+  
   app.use(express.static(path.join(__dirname, '../routes/static/build_baldwin_web_app_1/')));
 }
 
