@@ -1,7 +1,4 @@
-import React, { useRef, useEffect } from 'react';
-
-const SPEED_ROW1 = 0.4;
-const SPEED_ROW2 = 0.3;
+import React from 'react';
 
 function TechCard({ item, meta }) {
   const isUrl = meta.icon?.startsWith('http');
@@ -20,58 +17,36 @@ function TechCard({ item, meta }) {
   );
 }
 
-function CarouselRow({ items, techMeta, speed, reverse = false }) {
-  const trackRef = useRef(null);
-  const animRef = useRef(null);
-  const offsetRef = useRef(0);
-  const pausedRef = useRef(false);
-
-  const doubled = [...items, ...items];
-
-  useEffect(() => {
-    const track = trackRef.current;
-    if (!track || items.length === 0) return;
-
-    // start halfway through for reverse row so they don't sync
-    if (reverse) offsetRef.current = 0;
-
-    function step() {
-      if (!pausedRef.current) {
-        offsetRef.current += speed;
-        const halfWidth = track.scrollWidth / 2;
-        if (offsetRef.current >= halfWidth) offsetRef.current = 0;
-        track.style.transform = `translateX(-${offsetRef.current}px)`;
-      }
-      animRef.current = requestAnimationFrame(step);
-    }
-
-    animRef.current = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(animRef.current);
-  }, [items, speed, reverse]);
+function CarouselRow({ items, techMeta, duration = 30 }) {
+  // Repeat enough copies so the track is always wider than the viewport.
+  // With few items, 2x might be too short — 4x guarantees seamless loop.
+  const repeated = [...items, ...items, ...items, ...items];
+  // We animate -25% (1 out of 4 copies) so the reset is invisible.
+  const pct = 25;
 
   return (
     <div
       className="overflow-hidden"
       style={{
-        maskImage: 'linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)',
-        WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)'
+        maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
+        WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)'
       }}
-      onMouseEnter={() => { pausedRef.current = true; }}
-      onMouseLeave={() => { pausedRef.current = false; }}
     >
       <div
-        ref={trackRef}
-        className="flex gap-3 will-change-transform"
-        style={{ width: 'max-content' }}
+        className="flex gap-3"
+        style={{
+          width: 'max-content',
+          animation: `marquee-${pct} ${duration}s linear infinite`,
+        }}
+        onMouseEnter={e => e.currentTarget.style.animationPlayState = 'paused'}
+        onMouseLeave={e => e.currentTarget.style.animationPlayState = 'running'}
       >
-        {doubled.map((item, index) => {
+        {repeated.map((item, index) => {
           const meta = techMeta[item] || {
             icon: item.slice(0, 2).toUpperCase(),
             accent: 'text-slate-200 border-slate-300/40 bg-slate-200/10'
           };
-          return (
-            <TechCard key={`${item}-${index}`} item={item} meta={meta} />
-          );
+          return <TechCard key={`${item}-${index}`} item={item} meta={meta} />;
         })}
       </div>
     </div>
@@ -88,20 +63,28 @@ function StackSectionV2({ stack, techMeta }) {
     );
   }
 
-  // split stack into two roughly equal rows
   const mid = Math.ceil(stack.length / 2);
   const row1 = stack.slice(0, mid);
   const row2 = stack.slice(mid);
 
   return (
-    <section id="stack" data-reveal className="py-20 md:py-28">
-      <h2 className="text-2xl font-bold text-slate-100 md:text-3xl">Tech Stack</h2>
+    <>
+      <style>{`
+        @keyframes marquee-25 {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-25%); }
+        }
+      `}</style>
 
-      <div className="mt-8 flex flex-col gap-3">
-        <CarouselRow items={row1} techMeta={techMeta} speed={SPEED_ROW1} />
-        <CarouselRow items={row2} techMeta={techMeta} speed={SPEED_ROW2} reverse />
-      </div>
-    </section>
+      <section id="stack" data-reveal className="py-20 md:py-28">
+        <h2 className="text-2xl font-bold text-slate-100 md:text-3xl">Tech Stack</h2>
+
+        <div className="mt-8 flex flex-col gap-3">
+          <CarouselRow items={row1} techMeta={techMeta} duration={40} />
+          <CarouselRow items={row2} techMeta={techMeta} duration={32} />
+        </div>
+      </section>
+    </>
   );
 }
 
