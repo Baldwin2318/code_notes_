@@ -161,6 +161,23 @@ function baldwin_web_router1(app) {
     }
   });
 
+  app.get('/api/personal_me/technologies', async (req, res) => {
+    let client;
+    try {
+      client = await getDbClient();
+      const result = await client.query(`
+        SELECT name, icon_url, accent_color, category
+        FROM projects.technology
+        ORDER BY name
+      `);
+      res.json(result.rows);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    } finally {
+      if (client) client.release();
+    }
+  });
+
   app.use(express.static(path.join(__dirname, '../routes/static/build_baldwin_web_app_1/')));
 }
 
