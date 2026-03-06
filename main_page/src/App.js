@@ -5,6 +5,7 @@ import Navbar from './components/portfolio/Navbar';
 import HeroSection from './components/portfolio/HeroSection';
 import AboutSection from './components/portfolio/AboutSection';
 import StackSection from './components/portfolio/StackSection';
+import StackSectionV2 from './components/portfolio/StackSectionV2';
 import ProjectsSection from './components/portfolio/ProjectsSection';
 import ProjectsSectionV2 from './components/portfolio/ProjectsSectionV2';
 import ContactSection from './components/portfolio/ContactSection';
@@ -111,7 +112,8 @@ function App() {
       <main className="relative mx-auto w-full max-w-6xl px-6 md:px-10">
         <HeroSection profile={profile} typedRole={typedRole} />
         <AboutSection bio={profile.bio || ''} />
-        <StackSection stack={topStack} techMeta={techMeta} />
+        {/* <StackSection stack={topStack} techMeta={techMeta} /> */}
+        <StackSectionV2 stack={topStack} techMeta={techMeta} />
         {/* <ProjectsSection projects={projects} /> */}
         <ProjectsSectionV2 projects={projects} />
         <ContactSection
