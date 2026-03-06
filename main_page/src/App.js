@@ -1,49 +1,107 @@
-import React, { useEffect, useState } from 'react';
-import SideBar from './components/SideBar';
-import Preview from './components/Preview';
-import AddCode from './components/AddCode';
+import React, { useEffect, useMemo, useState } from 'react';
 import SERVER_URL from 'shared_data/react_critical_data.jsx';
+import DevBanner from './components/DevBanner';
+import Navbar from './components/portfolio/Navbar';
+import HeroSection from './components/portfolio/HeroSection';
+import AboutSection from './components/portfolio/AboutSection';
+import StackSection from './components/portfolio/StackSection';
+import ProjectsSection from './components/portfolio/ProjectsSection';
+import ContactSection from './components/portfolio/ContactSection';
+import { fallbackProfile, fallbackProjects, navLinks, techMeta } from './components/portfolio/constants';
+import useTyping from './hooks/useTyping';
 
 function App() {
-  const title = '<CodeNotes />';
-  const [data, setData] = useState([])
-  const [selectedCode, setSelectedCode] = useState([]);
+  const [profile, setProfile] = useState(fallbackProfile);
+  const [projects, setProjects] = useState(fallbackProjects);
+  const [bannerConfig, setBannerConfig] = useState(null);
+  const [scrolled, setScrolled] = useState(false);
 
-  // Assign toggle popup
-  const [addCodeWindow, setAddCodeWindow] = useState(false);
-  function HandleAddCodeWindow () {
-      setAddCodeWindow(prev => !prev);
-  }
+  const typedRole = useTyping(profile?.role_title ? [profile.role_title] : [], 75, 1800);
 
   useEffect(() => {
-    fetch(`${SERVER_URL}/api/get_info_from_db`, {
-      method: 'GET',
-      mode: 'cors',
-      cache: 'no-cache',
-      headers: {
-        'Content-Type': 'application/json'
+    async function loadPersonalMe() {
+      try {
+        const [profileResponse, projectsResponse, bannerResponse] = await Promise.all([
+          fetch(`${SERVER_URL}/api/personal_me/profile`),
+          fetch(`${SERVER_URL}/api/personal_me/projects`),
+          fetch(`${SERVER_URL}/api/config/dev-banner`)
+        ]);
+
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json();
+          if (profileData && typeof profileData === 'object') {
+            setProfile((prev) => ({ ...prev, ...profileData }));
+          }
+        }
+
+        if (projectsResponse.ok) {
+          const projectsData = await projectsResponse.json();
+          if (Array.isArray(projectsData)) {
+            setProjects(projectsData);
+          }
+        }
+
+        if (bannerResponse.ok) {
+          const bannerData = await bannerResponse.json();
+          if (bannerData && typeof bannerData === 'object') {
+            setBannerConfig(bannerData);
+          }
+        }
+      } catch (error) {
+        // Keep content blank if API is unavailable.
+      }
+    }
+
+    loadPersonalMe();
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 30);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    const targets = document.querySelectorAll('[data-reveal]');
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('reveal-visible');
+          }
+        });
       },
-      redirect: 'follow',
-      referrerPolicy: 'no-referrer',
-    })
-    .then(response => response.json()) // Convert the response to JSON
-    .then(data => {
-      setData(data)
-    })
-    .catch(error => {
-      console.error('Error fetching data:', error);
+      { threshold: 0.14 }
+    );
+
+    targets.forEach((target) => {
+      target.classList.add('reveal');
+      observer.observe(target);
     });
-  }, [HandleAddCodeWindow]);
-  
+
+    return () => observer.disconnect();
+  }, []);
+
+  const topProjects = useMemo(() => projects.slice(0, 3), [projects]);
+  const topStack = useMemo(() => (profile.tech_stack || []).slice(0, 8), [profile.tech_stack]);
+
   return (
-    <div>
-      <h1 style={{ color: '#4e4e4e', paddingLeft: 70, fontFamily: 'Fira Code' }}>{title}</h1>
-      <div style={{ justifyContent: 'flex-start', display: 'flex', paddingLeft: 20 }}>
-        <SideBar clickAddCode={HandleAddCodeWindow} data={data} setSelectedCode={setSelectedCode}/>
-        {!(selectedCode.length === 0) && <Preview selectedCode={selectedCode} setSelectedCode={setSelectedCode}/>}
-        {(selectedCode.length === 0) && <h1 style={{ padding: 100, fontStyle: 'italic', color: '#b1b1b1' }}>Select an item on the left side list</h1>}
-      </div>
-      {addCodeWindow && <AddCode togglePopup={HandleAddCodeWindow}/>}
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      <DevBanner config={bannerConfig} />
+      <div className="grid-overlay pointer-events-none fixed inset-0" />
+      <Navbar scrolled={scrolled} links={navLinks} name={profile.full_name || 'Portfolio'} />
+
+      <main className="relative mx-auto w-full max-w-6xl px-6 md:px-10">
+        <HeroSection profile={profile} typedRole={typedRole} />
+        <AboutSection bio={profile.bio || ''} />
+        <StackSection stack={topStack} techMeta={techMeta} />
+        <ProjectsSection projects={topProjects} />
+        <ContactSection
+          email={profile.email || ''}
+          github={profile.github || profile.github_url || ''}
+          linkedin={profile.linkedin || profile.linkedin_url || ''}
+        />
+      </main>
     </div>
   );
 }
