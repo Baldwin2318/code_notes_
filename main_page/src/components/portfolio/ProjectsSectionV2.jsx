@@ -116,4 +116,4 @@ function ProjectsSectionV2({ projects }) {
   );
 }
 
-export default ProjectsSection;
+export default ProjectsSectionV2;
