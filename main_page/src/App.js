@@ -23,7 +23,7 @@ function App() {
   useEffect(() => {
     async function loadPersonalMe() {
       try {
-        const [profileResponse, projectsResponse, bannerResponse] = await Promise.all([
+        const [profileResponse, projectsResponse, bannerResponse, techResponse] = await Promise.all([
           fetch(`${SERVER_URL}/api/personal_me/profile`),
           fetch(`${SERVER_URL}/api/personal_me/projects`),
           fetch(`${SERVER_URL}/api/config/dev-banner`),
