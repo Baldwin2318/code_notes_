@@ -1,87 +1,119 @@
-import React from 'react';
+import React, { useRef, useEffect, useState } from 'react';
+import StatusPill from './StatusPill';
 
-function TechCard({ item, meta }) {
-  const isUrl = meta.icon?.startsWith('http');
+function ProjectsSectionV2({ projects }) {
+  const trackRef = useRef(null);
+  const animRef = useRef(null);
+  const offsetRef = useRef(0);
+  const pausedRef = useRef(false);
+  const SPEED = 0.5; 
 
-  return (
-    <div className="group flex shrink-0 items-center gap-3 rounded-xl border border-slate-700/80 bg-slate-900/60 px-4 py-3 transition hover:-translate-y-0.5 hover:border-cyan-300/50">
-      <div className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded border ${meta.accent}`}>
-        {isUrl ? (
-          <img src={meta.icon} alt={item} className="h-4 w-4 object-contain" />
-        ) : (
-          <span className="font-mono text-[10px]">{meta.icon}</span>
-        )}
-      </div>
-      <p className="whitespace-nowrap text-sm font-semibold text-slate-100">{item}</p>
-    </div>
-  );
-}
+  // Duplicate projects so the loop feels seamless
+  const items = [...projects, ...projects];
 
-function CarouselRow({ items, techMeta, duration = 30 }) {
-  const doubled = [...items, ...items];
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track || projects.length === 0) return;
 
-  return (
-    <div
-      className="overflow-hidden"
-      style={{
-        maskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)',
-        WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)'
-      }}
-    >
-      <div
-        className="flex gap-3"
-        style={{
-          width: 'max-content',
-          animation: `marquee ${duration}s linear infinite`,
-        }}
-        onMouseEnter={e => e.currentTarget.style.animationPlayState = 'paused'}
-        onMouseLeave={e => e.currentTarget.style.animationPlayState = 'running'}
-      >
-        {doubled.map((item, index) => {
-          const meta = techMeta[item] || {
-            icon: item.slice(0, 2).toUpperCase(),
-            accent: 'text-slate-200 border-slate-300/40 bg-slate-200/10'
-          };
-          return <TechCard key={`${item}-${index}`} item={item} meta={meta} />;
-        })}
-      </div>
-    </div>
-  );
-}
+    function step() {
+      if (!pausedRef.current) {
+        offsetRef.current += SPEED;
+        
+        const halfWidth = track.scrollWidth / 2;
+        if (offsetRef.current >= halfWidth) {
+          offsetRef.current = 0;
+        }
+        track.style.transform = `translateX(-${offsetRef.current}px)`;
+      }
+      animRef.current = requestAnimationFrame(step);
+    }
 
-function StackSectionV2({ stack, techMeta }) {
-  if (!stack || stack.length === 0) {
+    animRef.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(animRef.current);
+  }, [projects]);
+
+  if (projects.length === 0) {
     return (
-      <section id="stack" data-reveal className="py-20 md:py-28">
-        <h2 className="text-2xl font-bold text-slate-100 md:text-3xl">Tech Stack</h2>
-        <p className="mt-6 text-sm text-slate-400">No tech stack data yet.</p>
+      <section id="projects" data-reveal className="py-20 md:py-28">
+        <h2 className="text-2xl font-bold text-slate-100 md:text-3xl">Projects</h2>
+        <p className="mt-6 text-sm text-slate-400">No featured projects yet.</p>
       </section>
     );
   }
 
-  const mid = Math.ceil(stack.length / 2);
-  const row1 = stack.slice(0, mid);
-  const row2 = stack.slice(mid);
-
   return (
-    <>
-      <style>{`
-        @keyframes marquee {
-          0%   { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-      `}</style>
+    <section id="projects" data-reveal className="py-20 md:py-28">
+      <h2 className="text-2xl font-bold text-slate-100 md:text-3xl">Projects</h2>
 
-      <section id="stack" data-reveal className="py-20 md:py-28">
-        <h2 className="text-2xl font-bold text-slate-100 md:text-3xl">Tech Stack</h2>
+      {/* Carousel wrapper — hides overflow and fades edges */}
+      <div
+        className="relative mt-8 overflow-hidden"
+        style={{
+          maskImage: 'linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)'
+        }}
+        onMouseEnter={() => { pausedRef.current = true; }}
+        onMouseLeave={() => { pausedRef.current = false; }}
+      >
+        {/* Scrolling track */}
+        <div
+          ref={trackRef}
+          className="flex gap-4 will-change-transform"
+          style={{ width: 'max-content' }}
+        >
+          {items.map((project, index) => (
+            <article
+              key={`${project.id}-${index}`}
+              className="group w-72 shrink-0 rounded-xl border border-slate-700/80 bg-slate-900/60 p-5 transition hover:-translate-y-1 hover:border-cyan-300/50"
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-xs uppercase tracking-[0.12em] text-slate-500">
+                  {project.year || 'Now'}
+                </span>
+                <StatusPill status={project.status || 'active'} />
+              </div>
 
-        <div className="mt-8 flex flex-col gap-3">
-          <CarouselRow items={row1} techMeta={techMeta} duration={35} />
-          <CarouselRow items={row2} techMeta={techMeta} duration={28} />
+              <h3 className="mt-4 text-lg font-bold text-slate-100 truncate">{project.title}</h3>
+              <p className="mt-3 text-sm leading-6 text-slate-300 line-clamp-3">{project.description}</p>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                {(project.tags || []).slice(0, 4).map((tag) => (
+                  <span key={`${project.id}-${tag}-${index}`} className="font-mono text-xs text-cyan-300">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+
+              <div className="mt-5 flex gap-4 text-sm">
+                {project.project_url && (
+                  <a
+                    className="font-semibold text-cyan-300 transition hover:text-cyan-200"
+                    href={project.project_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Live
+                  </a>
+                )}
+                {project.repo_url && (
+                  <a
+                    className="font-semibold text-cyan-300 transition hover:text-cyan-200"
+                    href={project.repo_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Repo
+                  </a>
+                )}
+              </div>
+            </article>
+          ))}
         </div>
-      </section>
-    </>
+      </div>
+    </section>
   );
 }
 
-export default StackSectionV2;
+export default ProjectsSection;
