@@ -73,6 +73,42 @@ function ProjectSectionGithub({ projects = [] }) {
               <h3 className="mt-4 text-lg font-bold text-slate-100 truncate">{project.title}</h3>
               <p className="mt-3 text-sm leading-6 text-slate-300 line-clamp-3">{project.description}</p>
 
+              <div className="mt-4">
+                <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500">Stack</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {(project.stack || []).length > 0 ? (
+                    project.stack.map((item) => (
+                      <span
+                        key={`${project.id}-stack-${item}-${index}`}
+                        className="rounded-md border border-cyan-400/30 bg-cyan-400/10 px-2 py-1 font-mono text-[11px] text-cyan-200"
+                      >
+                        {item}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-slate-500">No stack detected</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500">Frameworks</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {(project.frameworks || []).length > 0 ? (
+                    project.frameworks.slice(0, 8).map((framework) => (
+                      <span
+                        key={`${project.id}-framework-${framework}-${index}`}
+                        className="rounded-md border border-slate-600/70 bg-slate-800/70 px-2 py-1 font-mono text-[11px] text-slate-200"
+                      >
+                        {framework}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-slate-500">No frameworks detected</span>
+                  )}
+                </div>
+              </div>
+
               <div className="mt-5 flex gap-4 text-sm">
                 {(project.html_url || project.repo_url) && (
                   <a
