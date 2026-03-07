@@ -179,29 +179,203 @@ function baldwin_web_router1(app) {
   });
 
   app.get('/api/personal_me/github/projects', async (req, res) => {
+    const owner = 'Baldwin2318';
+    const githubHeaders = {
+      Accept: 'application/vnd.github+json',
+      Authorization: `Bearer ${process.env.GITHUB_TOKEN}`
+    };
+
+    const configFiles = {
+      'package.json': 'JavaScript/Node',
+      'requirements.txt': 'Python',
+      Pipfile: 'Python',
+      'Package.swift': 'Swift',
+      Podfile: 'Swift/iOS',
+      'go.mod': 'Go',
+      Gemfile: 'Ruby',
+      'pom.xml': 'Java/Maven',
+      'build.gradle': 'Java/Gradle',
+      'composer.json': 'PHP'
+    };
+
+    const buildProject = (repo) => ({
+      id: repo.id,
+      title: repo.name,
+      description: repo.description || '',
+      repo_url: repo.html_url,
+      project_url: repo.homepage || '',
+      year: new Date(repo.created_at).getFullYear(),
+      status: 'active',
+      tags: repo.topics || [],
+      stack: [],
+      frameworks: []
+    });
+
+    const fetchGithubJson = async (url) => {
+      const response = await fetch(url, { headers: githubHeaders });
+      if (!response.ok) {
+        throw new Error(`GitHub API request failed (${response.status}) for ${url}`);
+      }
+      return response.json();
+    };
+
+    const fetchRepoTree = async (repoName) => {
+      try {
+        const treeData = await fetchGithubJson(
+          `https://api.github.com/repos/${owner}/${repoName}/git/trees/main?recursive=1`
+        );
+        return { treeData, branch: 'main' };
+      } catch (mainErr) {
+        const treeData = await fetchGithubJson(
+          `https://api.github.com/repos/${owner}/${repoName}/git/trees/master?recursive=1`
+        );
+        return { treeData, branch: 'master' };
+      }
+    };
+
     try {
-      const response = await fetch(
-        'https://api.github.com/users/Baldwin2318/repos?sort=updated&per_page=100'
+      const reposResponse = await fetch(
+        `https://api.github.com/users/${owner}/repos?sort=updated&per_page=100`,
+        { headers: githubHeaders }
       );
-      const repos = await response.json();
-  
-      const projects = repos.map(repo => ({
-        id:          repo.id,
-        title:       repo.name,
-        description: repo.description || '',
-        repo_url:    repo.html_url,
-        project_url: repo.homepage || '',
-        year:        new Date(repo.created_at).getFullYear(),
-        status:      'active',
-        tags:        repo.topics || [],
-      }));
-  
+
+      if (!reposResponse.ok) {
+        throw new Error(`GitHub repos request failed (${reposResponse.status})`);
+      }
+
+      const repos = await reposResponse.json();
+
+      const settledProjects = await Promise.allSettled(
+        repos.map(async (repo) => {
+          const baseProject = buildProject(repo);
+
+          try {
+            const { treeData, branch } = await fetchRepoTree(repo.name);
+            const treeItems = Array.isArray(treeData?.tree) ? treeData.tree : [];
+            const stackSet = new Set();
+            let packageJsonPath = null;
+            let hasXcodeProject = false;
+            let hasXcodeWorkspace = false;
+            let hasSwiftFile = false;
+
+            treeItems.forEach((item) => {
+              const itemPath = item?.path || '';
+              const fileName = itemPath.split('/').pop();
+
+              if (configFiles[fileName]) {
+                stackSet.add(configFiles[fileName]);
+              }
+
+              if (itemPath.endsWith('.csproj')) {
+                stackSet.add('C#');
+              }
+
+              if (/\.xcodeproj(?:\/|$)/.test(itemPath)) {
+                hasXcodeProject = true;
+              }
+
+              if (/\.xcworkspace(?:\/|$)/.test(itemPath)) {
+                hasXcodeWorkspace = true;
+              }
+
+              if (itemPath.endsWith('.swift')) {
+                hasSwiftFile = true;
+              }
+
+              if (!packageJsonPath && fileName === 'package.json') {
+                packageJsonPath = itemPath;
+              }
+            });
+
+            if (hasXcodeProject || hasXcodeWorkspace) {
+              stackSet.add('Swift/iOS');
+            } else if (hasSwiftFile) {
+              stackSet.add('Swift');
+            }
+
+            let frameworks = [];
+
+            if (packageJsonPath) {
+              const encodedPath = packageJsonPath
+                .split('/')
+                .map((segment) => encodeURIComponent(segment))
+                .join('/');
+
+              try {
+                const packageJsonData = await fetchGithubJson(
+                  `https://api.github.com/repos/${owner}/${repo.name}/contents/${encodedPath}?ref=${branch}`
+                );
+
+                if (packageJsonData?.content) {
+                  const decodedPackageJson = Buffer.from(packageJsonData.content, 'base64').toString('utf8');
+                  const parsedPackageJson = JSON.parse(decodedPackageJson);
+                  const dependencies = Object.keys(parsedPackageJson.dependencies || {});
+                  const devDependencies = Object.keys(parsedPackageJson.devDependencies || {});
+                  frameworks = Array.from(new Set([...dependencies, ...devDependencies]));
+                }
+              } catch (packageErr) {
+                frameworks = [];
+              }
+            }
+
+            // Swift/iOS projects often use only Apple SDK frameworks.
+            // For those, detect imports from a small sample of Swift source files.
+            if (frameworks.length === 0 && hasSwiftFile) {
+              const swiftFiles = treeItems
+                .filter((item) => item?.type === 'blob' && (item?.path || '').endsWith('.swift'))
+                .slice(0, 3);
+
+              const importSet = new Set();
+
+              const swiftFileResults = await Promise.allSettled(
+                swiftFiles.map(async (file) => {
+                  const encodedSwiftPath = (file.path || '')
+                    .split('/')
+                    .map((segment) => encodeURIComponent(segment))
+                    .join('/');
+
+                  const fileData = await fetchGithubJson(
+                    `https://api.github.com/repos/${owner}/${repo.name}/contents/${encodedSwiftPath}?ref=${branch}`
+                  );
+
+                  if (!fileData?.content) return;
+
+                  const decoded = Buffer.from(fileData.content, 'base64').toString('utf8');
+                  const imports = [...decoded.matchAll(/^import\s+(\w+)/gm)].map((m) => m[1]);
+                  imports.forEach((name) => importSet.add(name));
+                })
+              );
+
+              if (swiftFileResults.length > 0) {
+                frameworks = Array.from(importSet);
+              }
+            }
+
+            return {
+              ...baseProject,
+              stack: Array.from(stackSet),
+              frameworks
+            };
+          } catch (repoErr) {
+            return baseProject;
+          }
+        })
+      );
+
+      const projects = settledProjects.map((result, index) => {
+        if (result.status === 'fulfilled') {
+          return result.value;
+        }
+
+        return buildProject(repos[index]);
+      });
+
       res.json(projects);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
   });
-  
+
   app.use(express.static(path.join(__dirname, '../routes/static/build_baldwin_web_app_1/')));
 }
 
