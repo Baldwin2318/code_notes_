@@ -1,22 +1,22 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import SERVER_URL from 'shared_data/react_critical_data.jsx';
 import DevBanner from './components/DevBanner';
+import DevOverlay from './components/DevOverlay';
+import DevRibbon from './components/DevRibbon';
 import Navbar from './components/portfolio/Navbar';
 import HeroSection from './components/portfolio/HeroSection';
 import AboutSection from './components/portfolio/AboutSection';
-import StackSection from './components/portfolio/StackSection';
 import StackSectionV2 from './components/portfolio/StackSectionV2';
-import ProjectsSection from './components/portfolio/ProjectsSection';
-import ProjectsSectionV2 from './components/portfolio/ProjectsSectionV2';
 import ProjectSectionGithub from './components/portfolio/ProjectSectionGithub';
 import ContactSection from './components/portfolio/ContactSection';
-import { fallbackProfile, fallbackProjects, navLinks } from './components/portfolio/constants';
+import { fallbackProfile, navLinks } from './components/portfolio/constants';
 import useTyping from './hooks/useTyping';
 
 function App() {
   const [profile, setProfile] = useState(fallbackProfile);
-  const [projects, setProjects] = useState(fallbackProjects);
   const [bannerConfig, setBannerConfig] = useState(null);
+  const [overlayConfig, setOverlayConfig] = useState(null);
+  const [ribbonConfig, setRibbonConfig] = useState(null);
   const [scrolled, setScrolled] = useState(false);
   const [technologies, setTechnologies] = useState([]);
   const [githubProjects, setGithubProjects] = useState([]);
@@ -26,25 +26,20 @@ function App() {
   useEffect(() => {
     async function loadPersonalMe() {
       try {
-        const [profileResponse, projectsResponse, bannerResponse, techResponse, githubProjectsResponse] = await Promise.all([
-          fetch(`${SERVER_URL}/api/personal_me/profile`),
-          fetch(`${SERVER_URL}/api/personal_me/projects`),
-          fetch(`${SERVER_URL}/api/config/dev-banner`),
-          fetch(`${SERVER_URL}/api/personal_me/technologies`),
-          fetch(`${SERVER_URL}/api/personal_me/github/projects`)
-        ]);
+        const [profileResponse, bannerResponse, overlayResponse, ribbonResponse, techResponse, githubProjectsResponse] =
+          await Promise.all([
+            fetch(`${SERVER_URL}/api/personal_me/profile`),
+            fetch(`${SERVER_URL}/api/config/announcement?component=banner`),
+            fetch(`${SERVER_URL}/api/config/announcement?component=overlay`),
+            fetch(`${SERVER_URL}/api/config/announcement?component=ribbon`),
+            fetch(`${SERVER_URL}/api/personal_me/technologies`),
+            fetch(`${SERVER_URL}/api/personal_me/github/projects`)
+          ]);
 
         if (profileResponse.ok) {
           const profileData = await profileResponse.json();
           if (profileData && typeof profileData === 'object') {
             setProfile((prev) => ({ ...prev, ...profileData }));
-          }
-        }
-
-        if (projectsResponse.ok) {
-          const projectsData = await projectsResponse.json();
-          if (Array.isArray(projectsData)) {
-            setProjects(projectsData);
           }
         }
 
@@ -55,14 +50,32 @@ function App() {
           }
         }
 
+        if (overlayResponse.ok) {
+          const overlayData = await overlayResponse.json();
+          if (overlayData && typeof overlayData === 'object') {
+            setOverlayConfig(overlayData);
+          }
+        }
+
+        if (ribbonResponse.ok) {
+          const ribbonData = await ribbonResponse.json();
+          if (ribbonData && typeof ribbonData === 'object') {
+            setRibbonConfig(ribbonData);
+          }
+        }
+
         if (techResponse.ok) {
           const techData = await techResponse.json();
-          if (Array.isArray(techData)) setTechnologies(techData);
+          if (Array.isArray(techData)) {
+            setTechnologies(techData);
+          }
         }
 
         if (githubProjectsResponse.ok) {
           const githubProjectsData = await githubProjectsResponse.json();
-          if (Array.isArray(githubProjectsData)) setGithubProjects(githubProjectsData);
+          if (Array.isArray(githubProjectsData)) {
+            setGithubProjects(githubProjectsData);
+          }
         }
       } catch (error) {
         // Keep content blank if API is unavailable.
@@ -99,13 +112,11 @@ function App() {
     return () => observer.disconnect();
   }, []);
 
-  const topProjects = useMemo(() => projects.slice(0, 3), [projects]);
-  const topStack = useMemo(() => (profile.tech_stack || []).slice(0, 8), [profile.tech_stack]);
   const techMeta = useMemo(() => {
-    return technologies.reduce((acc, t) => {
-      acc[t.name] = {
-        icon: t.icon_url || t.name.slice(0, 2).toUpperCase(), // fallback to initials
-        accent: t.accent_color || 'text-slate-200 border-slate-300/40 bg-slate-200/10'
+    return technologies.reduce((acc, tech) => {
+      acc[tech.name] = {
+        icon: tech.icon_url || tech.name.slice(0, 2).toUpperCase(),
+        accent: tech.accent_color || 'text-slate-200 border-slate-300/40 bg-slate-200/10'
       };
       return acc;
     }, {});
@@ -114,16 +125,16 @@ function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <DevBanner config={bannerConfig} />
+      <DevRibbon config={ribbonConfig} />
+      <DevOverlay config={overlayConfig} />
+
       <div className="grid-overlay pointer-events-none fixed inset-0" />
       <Navbar scrolled={scrolled} links={navLinks} name={profile.full_name || 'Portfolio'} />
 
       <main className="relative mx-auto w-full max-w-6xl px-6 md:px-10">
         <HeroSection profile={profile} typedRole={typedRole} />
         <AboutSection bio={profile.bio || ''} />
-        {/* <StackSection stack={topStack} techMeta={techMeta} /> */}
         <StackSectionV2 stack={profile.tech_stack || []} techMeta={techMeta} />
-        {/* <ProjectsSection projects={projects} /> */}
-        {/* <ProjectsSectionV2 projects={projects} /> */}
         <ProjectSectionGithub projects={githubProjects} />
         <ContactSection
           email={profile.email || ''}
