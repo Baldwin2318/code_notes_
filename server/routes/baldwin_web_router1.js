@@ -33,56 +33,105 @@ function baldwin_web_router1(app) {
   pg.types.setTypeParser(pg.types.builtins.TIMESTAMPTZ, (val) => val);
   pg.types.setTypeParser(pg.types.builtins.TIMESTAMP, (val) => val);
 
-  app.get('/api/config/dev-banner', async (req, res) => {
+
+  const validAnnouncementComponents = new Set(['banner', 'overlay', 'ribbon']);
+
+  function normalizeAnnouncementComponent(rawComponent) {
+    const normalized = String(rawComponent || 'banner').trim().toLowerCase();
+    return validAnnouncementComponents.has(normalized) ? normalized : null;
+  }
+
+  async function fetchAnnouncementConfig(client, component) {
+    const [settingsResult, announcementResult] = await Promise.all([
+      client.query(
+        `
+          SELECT key, value
+          FROM config.site_settings
+          WHERE key IN ('banner_enabled', 'banner_message', 'github_url')
+        `
+      ),
+      client.query(
+        `
+          SELECT
+            id,
+            message,
+            kind,
+            dismissible,
+            starts_at,
+            ends_at,
+            COALESCE(component, 'banner') AS component,
+            overlay_title,
+            overlay_cta,
+            ribbon_corner,
+            github_url
+          FROM config.announcements
+          WHERE active = TRUE
+            AND COALESCE(component, 'banner') = $1
+            AND (starts_at IS NULL OR starts_at <= NOW())
+            AND (ends_at IS NULL OR ends_at >= NOW())
+          ORDER BY created_at DESC, id DESC
+          LIMIT 1
+        `,
+        [component]
+      )
+    ]);
+
+    const settingMap = settingsResult.rows.reduce((acc, row) => {
+      acc[row.key] = row.value;
+      return acc;
+    }, {});
+
+    const announcement = announcementResult.rows[0] || null;
+    const enabled = component === 'banner' ? parseBoolean(settingMap.banner_enabled, false) : Boolean(announcement);
+
+    return {
+      enabled,
+      message: announcement?.message || (component === 'banner' ? settingMap.banner_message || '' : ''),
+      kind: announcement?.kind || 'dev',
+      dismissible: announcement?.dismissible ?? true,
+      component,
+      overlay_title: announcement?.overlay_title || null,
+      overlay_cta: announcement?.overlay_cta || null,
+      ribbon_corner: announcement?.ribbon_corner || 'top-right',
+      github_url: announcement?.github_url || settingMap.github_url || '',
+      starts_at: announcement?.starts_at || null,
+      ends_at: announcement?.ends_at || null
+    };
+  }
+
+  app.get('/api/config/announcement', async (req, res) => {
     let client;
     try {
+      const component = normalizeAnnouncementComponent(req.query.component);
+
+      if (!component) {
+        return res.status(400).json({
+          error: 'Invalid component. Use one of: banner, overlay, ribbon'
+        });
+      }
+
       client = await getDbClient();
-
-      const [settingsResult, announcementResult] = await Promise.all([
-        client.query(
-          `
-            SELECT key, value
-            FROM config.site_settings
-            WHERE key IN ('banner_enabled', 'banner_message', 'github_url')
-          `
-        ),
-        client.query(
-          `
-            SELECT id, message, kind, dismissible, starts_at, ends_at
-            FROM config.announcements
-            WHERE active = TRUE
-              AND starts_at <= NOW()
-              AND (ends_at IS NULL OR ends_at >= NOW())
-            ORDER BY created_at DESC, id DESC
-            LIMIT 1
-          `
-        )
-      ]);
-
-      const settingMap = settingsResult.rows.reduce((acc, row) => {
-        acc[row.key] = row.value;
-        return acc;
-      }, {});
-
-      const announcement = announcementResult.rows[0] || null;
-      const enabled = parseBoolean(settingMap.banner_enabled, false);
-
-      res.json({
-        enabled,
-        message: announcement?.message || settingMap.banner_message || '',
-        kind: announcement?.kind || 'dev',
-        dismissible: announcement?.dismissible ?? true,
-        github_url: settingMap.github_url || '',
-        starts_at: announcement?.starts_at || null,
-        ends_at: announcement?.ends_at || null
-      });
+      const config = await fetchAnnouncementConfig(client, component);
+      return res.json(config);
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      return res.status(500).json({ error: err.message });
     } finally {
       if (client) client.release();
     }
   });
 
+  app.get('/api/config/dev-banner', async (req, res) => {
+    let client;
+    try {
+      client = await getDbClient();
+      const config = await fetchAnnouncementConfig(client, 'banner');
+      return res.json(config);
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    } finally {
+      if (client) client.release();
+    }
+  });
   app.get('/api/personal_me/profile', async (req, res) => {
     let client;
     try {
