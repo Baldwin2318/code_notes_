@@ -123,7 +123,7 @@ function App() {
         {/* <StackSection stack={topStack} techMeta={techMeta} /> */}
         <StackSectionV2 stack={profile.tech_stack || []} techMeta={techMeta} />
         {/* <ProjectsSection projects={projects} /> */}
-        <ProjectsSectionV2 projects={projects} />
+        {/* <ProjectsSectionV2 projects={projects} /> */}
         <ProjectSectionGithub projects={githubProjects} />
         <ContactSection
           email={profile.email || ''}
