@@ -26,6 +26,33 @@ function parseBoolean(value, fallback = false) {
   return fallback;
 }
 
+function detectiOSApp(tree) {
+  const paths = tree.map((item) => item.path || '');
+
+  const indicators = {
+    xcodeproj: paths.some((p) => p.endsWith('.xcodeproj')),
+    xcworkspace: paths.some((p) => p.endsWith('.xcworkspace')),
+    infoPlist: paths.some((p) => p.endsWith('Info.plist')),
+    swiftFiles: paths.some((p) => p.endsWith('.swift')),
+    xcassets: paths.some((p) => p.endsWith('.xcassets'))
+  };
+
+  const isiOS = indicators.xcodeproj || indicators.xcworkspace || indicators.infoPlist;
+
+  return { isiOS, indicators };
+}
+
+function findAppIcon(tree) {
+  const paths = tree.map((item) => item.path || '');
+
+  const iconFile = paths.find((p) => (
+    p.includes('AppIcon.appiconset') &&
+    (p.endsWith('.png') || p.endsWith('.jpg') || p.endsWith('.jpeg'))
+  ));
+
+  return iconFile || null;
+}
+
 function baldwin_web_router1(app) {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
@@ -227,199 +254,215 @@ function baldwin_web_router1(app) {
     }
   });
 
-  app.get('/api/personal_me/github/projects', async (req, res) => {
-    const owner = 'Baldwin2318';
-    const githubHeaders = {
-      Accept: 'application/vnd.github+json',
-      Authorization: `Bearer ${process.env.GITHUB_TOKEN}`
-    };
+  const owner = 'Baldwin2318';
+  const githubHeaders = {
+    Accept: 'application/vnd.github+json',
+    Authorization: `Bearer ${process.env.GITHUB_TOKEN}`
+  };
 
-    const configFiles = {
-      'package.json': 'JavaScript/Node',
-      'requirements.txt': 'Python',
-      Pipfile: 'Python',
-      'Package.swift': 'Swift',
-      Podfile: 'Swift/iOS',
-      'go.mod': 'Go',
-      Gemfile: 'Ruby',
-      'pom.xml': 'Java/Maven',
-      'build.gradle': 'Java/Gradle',
-      'composer.json': 'PHP'
-    };
+  const configFiles = {
+    'package.json': 'JavaScript/Node',
+    'requirements.txt': 'Python',
+    Pipfile: 'Python',
+    'Package.swift': 'Swift',
+    Podfile: 'Swift/iOS',
+    'go.mod': 'Go',
+    Gemfile: 'Ruby',
+    'pom.xml': 'Java/Maven',
+    'build.gradle': 'Java/Gradle',
+    'composer.json': 'PHP'
+  };
 
-    const buildProject = (repo) => ({
-      id: repo.id,
-      title: repo.name,
-      description: repo.description || '',
-      repo_url: repo.html_url,
-      project_url: repo.homepage || '',
-      year: new Date(repo.created_at).getFullYear(),
-      status: 'active',
-      tags: repo.topics || [],
-      stack: [],
-      frameworks: []
-    });
+  const buildProject = (repo) => ({
+    id: repo.id,
+    title: repo.name,
+    description: repo.description || '',
+    repo_url: repo.html_url,
+    html_url: repo.html_url,
+    project_url: repo.homepage || '',
+    year: new Date(repo.created_at).getFullYear(),
+    status: 'active',
+    tags: repo.topics || [],
+    stack: [],
+    frameworks: [],
+    app_icon_url: null,
+    is_ios_app: false,
+    indicators: null
+  });
 
-    const fetchGithubJson = async (url) => {
-      const response = await fetch(url, { headers: githubHeaders });
-      if (!response.ok) {
-        throw new Error(`GitHub API request failed (${response.status}) for ${url}`);
-      }
-      return response.json();
-    };
+  const fetchGithubJson = async (url) => {
+    const response = await fetch(url, { headers: githubHeaders });
+    if (!response.ok) {
+      throw new Error(`GitHub API request failed (${response.status}) for ${url}`);
+    }
+    return response.json();
+  };
 
-    const fetchRepoTree = async (repoName) => {
-      try {
-        const treeData = await fetchGithubJson(
-          `https://api.github.com/repos/${owner}/${repoName}/git/trees/main?recursive=1`
-        );
-        return { treeData, branch: 'main' };
-      } catch (mainErr) {
-        const treeData = await fetchGithubJson(
-          `https://api.github.com/repos/${owner}/${repoName}/git/trees/master?recursive=1`
-        );
-        return { treeData, branch: 'master' };
-      }
-    };
+  const fetchRepoTree = async (repoName) => {
+    try {
+      const treeData = await fetchGithubJson(
+        `https://api.github.com/repos/${owner}/${repoName}/git/trees/main?recursive=1`
+      );
+      return { treeData, branch: 'main' };
+    } catch (mainErr) {
+      const treeData = await fetchGithubJson(
+        `https://api.github.com/repos/${owner}/${repoName}/git/trees/master?recursive=1`
+      );
+      return { treeData, branch: 'master' };
+    }
+  };
+
+  const hydrateGithubProject = async (repo) => {
+    const baseProject = buildProject(repo);
 
     try {
-      const reposResponse = await fetch(
-        `https://api.github.com/users/${owner}/repos?sort=updated&per_page=100`,
-        { headers: githubHeaders }
-      );
+      const { treeData, branch } = await fetchRepoTree(repo.name);
+      const treeItems = Array.isArray(treeData?.tree) ? treeData.tree : [];
+      const stackSet = new Set();
+      let packageJsonPath = null;
+      let hasSwiftFile = false;
 
-      if (!reposResponse.ok) {
-        throw new Error(`GitHub repos request failed (${reposResponse.status})`);
-      }
+      treeItems.forEach((item) => {
+        const itemPath = item?.path || '';
+        const fileName = itemPath.split('/').pop();
 
-      const repos = await reposResponse.json();
-
-      const settledProjects = await Promise.allSettled(
-        repos.map(async (repo) => {
-          const baseProject = buildProject(repo);
-
-          try {
-            const { treeData, branch } = await fetchRepoTree(repo.name);
-            const treeItems = Array.isArray(treeData?.tree) ? treeData.tree : [];
-            const stackSet = new Set();
-            let packageJsonPath = null;
-            let hasXcodeProject = false;
-            let hasXcodeWorkspace = false;
-            let hasSwiftFile = false;
-
-            treeItems.forEach((item) => {
-              const itemPath = item?.path || '';
-              const fileName = itemPath.split('/').pop();
-
-              if (configFiles[fileName]) {
-                stackSet.add(configFiles[fileName]);
-              }
-
-              if (itemPath.endsWith('.csproj')) {
-                stackSet.add('C#');
-              }
-
-              if (/\.xcodeproj(?:\/|$)/.test(itemPath)) {
-                hasXcodeProject = true;
-              }
-
-              if (/\.xcworkspace(?:\/|$)/.test(itemPath)) {
-                hasXcodeWorkspace = true;
-              }
-
-              if (itemPath.endsWith('.swift')) {
-                hasSwiftFile = true;
-              }
-
-              if (!packageJsonPath && fileName === 'package.json') {
-                packageJsonPath = itemPath;
-              }
-            });
-
-            if (hasXcodeProject || hasXcodeWorkspace) {
-              stackSet.add('Swift/iOS');
-            } else if (hasSwiftFile) {
-              stackSet.add('Swift');
-            }
-
-            let frameworks = [];
-
-            if (packageJsonPath) {
-              const encodedPath = packageJsonPath
-                .split('/')
-                .map((segment) => encodeURIComponent(segment))
-                .join('/');
-
-              try {
-                const packageJsonData = await fetchGithubJson(
-                  `https://api.github.com/repos/${owner}/${repo.name}/contents/${encodedPath}?ref=${branch}`
-                );
-
-                if (packageJsonData?.content) {
-                  const decodedPackageJson = Buffer.from(packageJsonData.content, 'base64').toString('utf8');
-                  const parsedPackageJson = JSON.parse(decodedPackageJson);
-                  const dependencies = Object.keys(parsedPackageJson.dependencies || {});
-                  const devDependencies = Object.keys(parsedPackageJson.devDependencies || {});
-                  frameworks = Array.from(new Set([...dependencies, ...devDependencies]));
-                }
-              } catch (packageErr) {
-                frameworks = [];
-              }
-            }
-
-            // Swift/iOS projects often use only Apple SDK frameworks.
-            // For those, detect imports from a small sample of Swift source files.
-            if (frameworks.length === 0 && hasSwiftFile) {
-              const swiftFiles = treeItems
-                .filter((item) => item?.type === 'blob' && (item?.path || '').endsWith('.swift'))
-                .slice(0, 3);
-
-              const importSet = new Set();
-
-              const swiftFileResults = await Promise.allSettled(
-                swiftFiles.map(async (file) => {
-                  const encodedSwiftPath = (file.path || '')
-                    .split('/')
-                    .map((segment) => encodeURIComponent(segment))
-                    .join('/');
-
-                  const fileData = await fetchGithubJson(
-                    `https://api.github.com/repos/${owner}/${repo.name}/contents/${encodedSwiftPath}?ref=${branch}`
-                  );
-
-                  if (!fileData?.content) return;
-
-                  const decoded = Buffer.from(fileData.content, 'base64').toString('utf8');
-                  const imports = [...decoded.matchAll(/^import\s+(\w+)/gm)].map((m) => m[1]);
-                  imports.forEach((name) => importSet.add(name));
-                })
-              );
-
-              if (swiftFileResults.length > 0) {
-                frameworks = Array.from(importSet);
-              }
-            }
-
-            return {
-              ...baseProject,
-              stack: Array.from(stackSet),
-              frameworks
-            };
-          } catch (repoErr) {
-            return baseProject;
-          }
-        })
-      );
-
-      const projects = settledProjects.map((result, index) => {
-        if (result.status === 'fulfilled') {
-          return result.value;
+        if (configFiles[fileName]) {
+          stackSet.add(configFiles[fileName]);
         }
 
-        return buildProject(repos[index]);
+        if (itemPath.endsWith('.csproj')) {
+          stackSet.add('C#');
+        }
+
+        if (itemPath.endsWith('.swift')) {
+          hasSwiftFile = true;
+        }
+
+        if (!packageJsonPath && fileName === 'package.json') {
+          packageJsonPath = itemPath;
+        }
       });
 
+      const iosDetection = detectiOSApp(treeItems);
+      const appIconPath = findAppIcon(treeItems);
+
+      if (iosDetection.isiOS) {
+        stackSet.add('Swift/iOS');
+      } else if (hasSwiftFile) {
+        stackSet.add('Swift');
+      }
+
+      let frameworks = [];
+
+      if (packageJsonPath) {
+        const encodedPath = packageJsonPath
+          .split('/')
+          .map((segment) => encodeURIComponent(segment))
+          .join('/');
+
+        try {
+          const packageJsonData = await fetchGithubJson(
+            `https://api.github.com/repos/${owner}/${repo.name}/contents/${encodedPath}?ref=${branch}`
+          );
+
+          if (packageJsonData?.content) {
+            const decodedPackageJson = Buffer.from(packageJsonData.content, 'base64').toString('utf8');
+            const parsedPackageJson = JSON.parse(decodedPackageJson);
+            const dependencies = Object.keys(parsedPackageJson.dependencies || {});
+            const devDependencies = Object.keys(parsedPackageJson.devDependencies || {});
+            frameworks = Array.from(new Set([...dependencies, ...devDependencies]));
+          }
+        } catch (packageErr) {
+          frameworks = [];
+        }
+      }
+
+      if (frameworks.length === 0 && hasSwiftFile) {
+        const swiftFiles = treeItems
+          .filter((item) => item?.type === 'blob' && (item?.path || '').endsWith('.swift'))
+          .slice(0, 3);
+
+        const importSet = new Set();
+
+        await Promise.allSettled(
+          swiftFiles.map(async (file) => {
+            const encodedSwiftPath = (file.path || '')
+              .split('/')
+              .map((segment) => encodeURIComponent(segment))
+              .join('/');
+
+            const fileData = await fetchGithubJson(
+              `https://api.github.com/repos/${owner}/${repo.name}/contents/${encodedSwiftPath}?ref=${branch}`
+            );
+
+            if (!fileData?.content) return;
+
+            const decoded = Buffer.from(fileData.content, 'base64').toString('utf8');
+            const imports = [...decoded.matchAll(/^import\s+(\w+)/gm)].map((match) => match[1]);
+            imports.forEach((name) => importSet.add(name));
+          })
+        );
+
+        frameworks = Array.from(importSet);
+      }
+
+      const appIconUrl = appIconPath
+        ? `https://raw.githubusercontent.com/${owner}/${repo.name}/${branch}/${appIconPath}`
+        : null;
+
+      return {
+        ...baseProject,
+        stack: Array.from(stackSet),
+        frameworks,
+        app_icon_url: appIconUrl,
+        is_ios_app: iosDetection.isiOS,
+        indicators: iosDetection.indicators
+      };
+    } catch (repoErr) {
+      return baseProject;
+    }
+  };
+
+  const fetchGithubProjects = async () => {
+    const reposResponse = await fetch(
+      `https://api.github.com/users/${owner}/repos?sort=updated&per_page=100`,
+      { headers: githubHeaders }
+    );
+
+    if (!reposResponse.ok) {
+      throw new Error(`GitHub repos request failed (${reposResponse.status})`);
+    }
+
+    const repos = await reposResponse.json();
+
+    const settledProjects = await Promise.allSettled(
+      repos.map((repo) => hydrateGithubProject(repo))
+    );
+
+    return settledProjects.map((result, index) => {
+      if (result.status === 'fulfilled') {
+        return result.value;
+      }
+
+      return buildProject(repos[index]);
+    });
+  };
+
+  app.get('/api/personal_me/github/projects', async (req, res) => {
+
+    try {
+      const projects = await fetchGithubProjects();
       res.json(projects);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get('/api/personal_me/github/projects/ios', async (req, res) => {
+    try {
+      const projects = await fetchGithubProjects();
+      const iosProjects = projects.filter((project) => project.is_ios_app);
+      res.json(iosProjects);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
