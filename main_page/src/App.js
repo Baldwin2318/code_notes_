@@ -8,6 +8,7 @@ import HeroSection from './components/portfolio/HeroSection';
 import AboutSection from './components/portfolio/AboutSection';
 import StackSectionV2 from './components/portfolio/StackSectionV2';
 import ProjectSectionGithub from './components/portfolio/ProjectSectionGithub';
+import IOSProjects from './components/portfolio/iosProjects';
 import ContactSection from './components/portfolio/ContactSection';
 import { fallbackProfile, navLinks } from './components/portfolio/constants';
 import useTyping from './hooks/useTyping';
@@ -20,20 +21,30 @@ function App() {
   const [scrolled, setScrolled] = useState(false);
   const [technologies, setTechnologies] = useState([]);
   const [githubProjects, setGithubProjects] = useState([]);
+  const [iosProjects, setIosProjects] = useState([]);
 
   const typedRole = useTyping(profile?.role_title ? [profile.role_title] : [], 75, 1800);
 
   useEffect(() => {
     async function loadPersonalMe() {
       try {
-        const [profileResponse, bannerResponse, overlayResponse, ribbonResponse, techResponse, githubProjectsResponse] =
+        const [
+          profileResponse,
+          bannerResponse,
+          overlayResponse,
+          ribbonResponse,
+          techResponse,
+          githubProjectsResponse,
+          iosProjectsResponse
+        ] =
           await Promise.all([
             fetch(`${SERVER_URL}/api/personal_me/profile`),
             fetch(`${SERVER_URL}/api/config/announcement?component=banner`),
             fetch(`${SERVER_URL}/api/config/announcement?component=overlay`),
             fetch(`${SERVER_URL}/api/config/announcement?component=ribbon`),
             fetch(`${SERVER_URL}/api/personal_me/technologies`),
-            fetch(`${SERVER_URL}/api/personal_me/github/projects`)
+            fetch(`${SERVER_URL}/api/personal_me/github/projects`),
+            fetch(`${SERVER_URL}/api/personal_me/github/projects/ios`)
           ]);
 
         if (profileResponse.ok) {
@@ -75,6 +86,13 @@ function App() {
           const githubProjectsData = await githubProjectsResponse.json();
           if (Array.isArray(githubProjectsData)) {
             setGithubProjects(githubProjectsData);
+          }
+        }
+
+        if (iosProjectsResponse.ok) {
+          const iosProjectsData = await iosProjectsResponse.json();
+          if (Array.isArray(iosProjectsData)) {
+            setIosProjects(iosProjectsData);
           }
         }
       } catch (error) {
@@ -133,14 +151,15 @@ function App() {
 
       <main className="relative mx-auto w-full max-w-6xl px-6 md:px-10">
         <HeroSection profile={profile} typedRole={typedRole} />
-        <AboutSection bio={profile.bio || ''} />
-        <StackSectionV2 stack={profile.tech_stack || []} techMeta={techMeta} />
-        <ProjectSectionGithub projects={githubProjects} />
-        <ContactSection
+        <IOSProjects projects={iosProjects} />
+        {/* <AboutSection bio={profile.bio || ''} /> */}
+        {/* <StackSectionV2 stack={profile.tech_stack || []} techMeta={techMeta} /> */}
+        {/* <ProjectSectionGithub projects={githubProjects} /> */}
+        {/* <ContactSection
           email={profile.email || ''}
           github={profile.github || profile.github_url || ''}
           linkedin={profile.linkedin || profile.linkedin_url || ''}
-        />
+        /> */}
       </main>
     </div>
   );
