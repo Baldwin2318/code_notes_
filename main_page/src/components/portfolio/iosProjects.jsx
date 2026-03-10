@@ -29,18 +29,20 @@ function IOSProjects({ projects = [] }) {
               <article
                 key={project.id} >
                 <div className="flex items-center gap-4">
-                  {project.app_icon_url ? (
-                    <img
-                      src={project.app_icon_url}
-                      alt={`${project.title} app icon`}
-                      className="h-16 w-16 rounded-2xl border border-slate-700/70 bg-slate-950 object-cover"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-700/70 bg-slate-800 font-mono text-sm text-cyan-200">
-                      {getProjectInitials(project.title)}
-                    </div>
-                  )}
+                  <a href={`/ios_app_${encodeURIComponent(project.title)}`} className="shrink-0">
+                    {project.app_icon_url ? (
+                      <img
+                        src={project.app_icon_url}
+                        alt={`${project.title} app icon`}
+                        className="h-16 w-16 rounded-2xl border border-slate-700/70 bg-slate-950 object-cover transition hover:scale-[1.03]"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-700/70 bg-slate-800 font-mono text-sm text-cyan-200 transition hover:scale-[1.03]">
+                        {getProjectInitials(project.title)}
+                      </div>
+                    )}
+                  </a>
                 </div>
               </article>
             ))}
