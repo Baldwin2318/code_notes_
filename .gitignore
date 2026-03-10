@@ -23,6 +23,7 @@ logs/
 server/routes/static/build_baldwin_web_app_1/
 server/routes/static/build_splice_log_page/
 server/routes/static/splice_log_page/
+server/routes/static/build_ios_project_page/
 
 # Generated static files
 server/routes/static/**/*.js
