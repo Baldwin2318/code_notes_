@@ -61,7 +61,7 @@ function App() {
 
         {!loading && !error && project && (
           <>
-            <section className="mt-10 overflow-hidden rounded-[2rem] border border-slate-800 bg-slate-950/80 shadow-[0_40px_120px_rgba(15,23,42,0.55)]">
+            <section className="mt-10 overflow-hidden rounded-[2rem] border border-transparent bg-transparent">
               <div className="grid gap-8 px-6 py-8 md:grid-cols-[160px_1fr] md:px-10 md:py-10">
                 <div className="flex items-start justify-center md:justify-start">
                   {project.app_icon_url ? (
@@ -89,7 +89,6 @@ function App() {
                   </div>
 
                   <div className="mt-6 flex flex-wrap gap-3 text-xs uppercase tracking-[0.18em] text-slate-400">
-                    <span className="rounded-full border border-slate-700 px-3 py-2">App Store style view</span>
                     <span className="rounded-full border border-slate-700 px-3 py-2">{project.year}</span>
                     <span className="rounded-full border border-slate-700 px-3 py-2">{project.repo_name}</span>
                   </div>
