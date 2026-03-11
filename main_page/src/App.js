@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import SERVER_URL from 'shared_data/react_critical_data.jsx';
-import { DevBanner, DevOverlay, DevRibbon } from 'shared_components';
+import { DevBanner, DevOverlay, DevRibbon, Footer } from 'shared_components';
 import Navbar from './components/portfolio/Navbar';
 import HeroSection from './components/portfolio/HeroSection';
 import AboutSection from './components/portfolio/AboutSection';
@@ -158,6 +158,12 @@ function App() {
           github={profile.github || profile.github_url || ''}
           linkedin={profile.linkedin || profile.linkedin_url || ''}
         /> */}
+        <Footer
+          fullName={profile.full_name || 'Baldwin'}
+          email={profile.email || ''}
+          github={profile.github || profile.github_url || ''}
+          linkedin={profile.linkedin || profile.linkedin_url || ''}
+        />
       </main>
     </div>
   );
