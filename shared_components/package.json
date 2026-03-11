@@ -1,0 +1,20 @@
+{
+  "name": "shared_components",
+  "version": "1.0.0",
+  "description": "Shared React announcement components for code_notes web pages",
+  "type": "module",
+  "main": "./dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  }
+}
