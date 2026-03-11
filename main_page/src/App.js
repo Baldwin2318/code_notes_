@@ -149,10 +149,10 @@ function App() {
 
       <main className="relative mx-auto w-full max-w-6xl px-6 md:px-10">
         <HeroSection profile={profile} typedRole={typedRole} />
+        <AboutSection bio={profile.bio || ''} />
         <IOSProjects projects={iosProjects} />
-        {/* <AboutSection bio={profile.bio || ''} /> */}
-        {/* <StackSectionV2 stack={profile.tech_stack || []} techMeta={techMeta} /> */}
-        {/* <ProjectSectionGithub projects={githubProjects} /> */}
+        <StackSectionV2 stack={profile.tech_stack || []} techMeta={techMeta} />
+        <ProjectSectionGithub projects={githubProjects} />
         {/* <ContactSection
           email={profile.email || ''}
           github={profile.github || profile.github_url || ''}
