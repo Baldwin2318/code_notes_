@@ -25,7 +25,6 @@ server/routes/static/build_splice_log_page/
 server/routes/static/splice_log_page/
 server/routes/static/build_ios_project_page/
 shared_components/node_modules/
-shared_components/dist/
 
 # Generated static files
 server/routes/static/**/*.js
