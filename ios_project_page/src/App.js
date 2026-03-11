@@ -65,7 +65,7 @@ function App() {
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <DevBanner config={bannerConfig} />
       <DevRibbon config={ribbonConfig} />
-      <DevOverlay config={overlayConfig} />
+      {/* <DevOverlay config={overlayConfig} /> */}
 
       <div className="grid-overlay pointer-events-none fixed inset-0" />
 
