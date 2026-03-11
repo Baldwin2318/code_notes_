@@ -113,7 +113,7 @@ function App() {
 
                 <div className="flex flex-col justify-between">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.32em] text-cyan-300/70">IOS APP PROJECT</p>
+                    <p className="text-xs uppercase tracking-[0.32em] text-cyan-300/70">IOS App Projects</p>
                     <h1 className="mt-3 font-sans text-4xl font-bold tracking-tight text-white md:text-5xl">
                       {project.title}
                     </h1>
