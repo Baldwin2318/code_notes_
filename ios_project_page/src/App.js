@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { DevBanner, DevOverlay, DevRibbon } from 'shared_components';
 import SERVER_URL from 'shared_data/react_critical_data.jsx';
 
 function getRepoNameFromPath() {
@@ -11,6 +12,9 @@ function App() {
   const [project, setProject] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [bannerConfig, setBannerConfig] = useState(null);
+  const [overlayConfig, setOverlayConfig] = useState(null);
+  const [ribbonConfig, setRibbonConfig] = useState(null);
 
   useEffect(() => {
     async function loadProject() {
@@ -21,14 +25,32 @@ function App() {
       }
 
       try {
-        const response = await fetch(`${SERVER_URL}/api/ios_app/${encodeURIComponent(repoName)}`);
-        const data = await response.json();
+        const [projectResponse, bannerResponse, overlayResponse, ribbonResponse] = await Promise.all([
+          fetch(`${SERVER_URL}/api/ios_app/${encodeURIComponent(repoName)}`),
+          fetch(`${SERVER_URL}/api/config/announcement?component=banner`),
+          fetch(`${SERVER_URL}/api/config/announcement?component=overlay`),
+          fetch(`${SERVER_URL}/api/config/announcement?component=ribbon`)
+        ]);
 
-        if (!response.ok) {
+        const data = await projectResponse.json();
+
+        if (!projectResponse.ok) {
           throw new Error(data?.error || 'Unable to load the selected iOS project.');
         }
 
         setProject(data);
+
+        if (bannerResponse.ok) {
+          setBannerConfig(await bannerResponse.json());
+        }
+
+        if (overlayResponse.ok) {
+          setOverlayConfig(await overlayResponse.json());
+        }
+
+        if (ribbonResponse.ok) {
+          setRibbonConfig(await ribbonResponse.json());
+        }
       } catch (fetchError) {
         setError(fetchError.message);
       } finally {
@@ -40,8 +62,14 @@ function App() {
   }, [repoName]);
 
   return (
-    <div className="app-shell px-5 py-8 text-slate-100 md:px-10 md:py-12">
-      <main className="mx-auto max-w-6xl">
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      <DevBanner config={bannerConfig} />
+      <DevRibbon config={ribbonConfig} />
+      <DevOverlay config={overlayConfig} />
+
+      <div className="grid-overlay pointer-events-none fixed inset-0" />
+
+      <main className="relative mx-auto w-full max-w-6xl px-5 py-8 md:px-10 md:py-12">
         <a href="/" className="text-xs uppercase tracking-[0.28em] text-cyan-300/80">
           Back to portfolio
         </a>
