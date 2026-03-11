@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import SERVER_URL from 'shared_data/react_critical_data.jsx';
-import DevBanner from './components/DevBanner';
-import DevOverlay from './components/DevOverlay';
-import DevRibbon from './components/DevRibbon';
+import { DevBanner, DevOverlay, DevRibbon } from 'shared_components';
 import Navbar from './components/portfolio/Navbar';
 import HeroSection from './components/portfolio/HeroSection';
 import AboutSection from './components/portfolio/AboutSection';
