@@ -16,6 +16,10 @@ function HeroSection({ profile, typedRole }) {
               Based in {profile.location} 🇨🇦
             </p>
           )}
+          <p className="mt-5 font-mono text-sm text-cyan-300 md:text-base">
+            {typedRole || profile.role_title || ''}
+            {(typedRole || profile.role_title) && <span className="typing-cursor" />}
+          </p>
         </div>
 
         <div className="relative mx-auto shrink-0 md:mx-0">
