@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build_pages": "cd main_page && npm run build && cd ../ios_project_page && npm run build && cd ../shared_components && npm run build "
+    "build_pages": "npm --prefix shared_components run build && npm --prefix main_page run build && npm --prefix ios_project_page run build"
   },
   "keywords": [],
   "author": "",
