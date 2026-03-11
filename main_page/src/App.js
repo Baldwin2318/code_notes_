@@ -145,7 +145,7 @@ function App() {
       <DevOverlay config={overlayConfig} />
 
       <div className="grid-overlay pointer-events-none fixed inset-0" />
-      <Navbar scrolled={scrolled} links={navLinks} name={profile.full_name || 'Portfolio'} />
+      {/* <Navbar scrolled={scrolled} links={navLinks} name={profile.full_name || 'Portfolio'} /> */}
 
       <main className="relative mx-auto w-full max-w-6xl px-6 md:px-10">
         <HeroSection profile={profile} typedRole={typedRole} />
