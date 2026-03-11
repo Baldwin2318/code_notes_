@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { DevBanner, DevOverlay, DevRibbon } from 'shared_components';
+import { DevBanner, DevOverlay, DevRibbon, Footer } from 'shared_components';
 import SERVER_URL from 'shared_data/react_critical_data.jsx';
 
 function getRepoNameFromPath() {
@@ -15,6 +15,7 @@ function App() {
   const [bannerConfig, setBannerConfig] = useState(null);
   const [overlayConfig, setOverlayConfig] = useState(null);
   const [ribbonConfig, setRibbonConfig] = useState(null);
+  const [profile, setProfile] = useState(null);
 
   useEffect(() => {
     async function loadProject() {
@@ -25,11 +26,12 @@ function App() {
       }
 
       try {
-        const [projectResponse, bannerResponse, overlayResponse, ribbonResponse] = await Promise.all([
+        const [projectResponse, bannerResponse, overlayResponse, ribbonResponse, profileResponse] = await Promise.all([
           fetch(`${SERVER_URL}/api/ios_app/${encodeURIComponent(repoName)}`),
           fetch(`${SERVER_URL}/api/config/announcement?component=banner`),
           fetch(`${SERVER_URL}/api/config/announcement?component=overlay`),
-          fetch(`${SERVER_URL}/api/config/announcement?component=ribbon`)
+          fetch(`${SERVER_URL}/api/config/announcement?component=ribbon`),
+          fetch(`${SERVER_URL}/api/personal_me/profile`)
         ]);
 
         const data = await projectResponse.json();
@@ -50,6 +52,10 @@ function App() {
 
         if (ribbonResponse.ok) {
           setRibbonConfig(await ribbonResponse.json());
+        }
+
+        if (profileResponse.ok) {
+          setProfile(await profileResponse.json());
         }
       } catch (fetchError) {
         setError(fetchError.message);
@@ -158,6 +164,13 @@ function App() {
                 ))}
               </div>
             </section>
+
+            <Footer
+              fullName={profile?.full_name || 'Baldwin'}
+              email={profile?.email || ''}
+              github={profile?.github || profile?.github_url || ''}
+              linkedin={profile?.linkedin || profile?.linkedin_url || ''}
+            />
           </>
         )}
       </main>
