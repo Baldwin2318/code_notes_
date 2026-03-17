@@ -69,7 +69,7 @@ function baldwin_web_router1(app) {
   }
 
   async function fetchAnnouncementConfig(client, component) {
-    const [settingsResult, announcementResult] = await Promise.all([
+    const [settingsResult, announcementResult, wipResult] = await Promise.all([
       client.query(
         `
           SELECT key, value
@@ -100,6 +100,19 @@ function baldwin_web_router1(app) {
           LIMIT 1
         `,
         [component]
+      ),
+      client.query(
+        `
+          SELECT
+            id,
+            title,
+            description,
+            status_label,
+            display_order
+          FROM config.wip_items
+          WHERE active = TRUE
+          ORDER BY display_order ASC, id ASC
+        `
       )
     ]);
 
@@ -122,7 +135,8 @@ function baldwin_web_router1(app) {
       ribbon_corner: announcement?.ribbon_corner || 'top-right',
       github_url: announcement?.github_url || settingMap.github_url || '',
       starts_at: announcement?.starts_at || null,
-      ends_at: announcement?.ends_at || null
+      ends_at: announcement?.ends_at || null,
+      wip_items: wipResult.rows || []
     };
   }
 
