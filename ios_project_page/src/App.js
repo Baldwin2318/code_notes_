@@ -335,7 +335,7 @@ function App() {
             <section className="mt-8 rounded-[2rem] border border-slate-800 p-6 md:p-8 border-transparent bg-transparent">
               <h2 className="font-sans text-2xl font-bold text-white">Description</h2>
               <div className="mt-5 space-y-4">
-                <p>{project.description}</p>
+                {/* <p>{project.description}</p> */}
                 <MarkdownErrorBoundary markdown={project.readme_markdown} />
               </div>
             </section>
