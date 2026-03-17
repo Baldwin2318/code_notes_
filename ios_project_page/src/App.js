@@ -1,6 +1,180 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { DevBanner, DevOverlay, DevRibbon, Footer } from 'shared_components';
+import { DevBanner, DevRibbon, Footer } from 'shared_components';
 import SERVER_URL from 'shared_data/react_critical_data.jsx';
+
+function renderInlineMarkdown(text) {
+  const nodes = [];
+  const pattern = /!\[([^\]]*)\]\(([^)]+)\)|\[([^\]]+)\]\(([^)]+)\)|`([^`]+)`/g;
+  let lastIndex = 0;
+  let match;
+  let key = 0;
+
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      nodes.push(text.slice(lastIndex, match.index));
+    }
+
+    if (match[1] !== undefined && match[2] !== undefined) {
+      nodes.push(
+        <img
+          key={`img-${key++}`}
+          src={match[2]}
+          alt={match[1]}
+          className="my-6 rounded-[1.5rem] border border-slate-800 bg-slate-950 shadow-2xl"
+        />
+      );
+    } else if (match[3] !== undefined && match[4] !== undefined) {
+      nodes.push(
+        <a
+          key={`link-${key++}`}
+          href={match[4]}
+          target="_blank"
+          rel="noreferrer"
+          className="text-cyan-300 underline decoration-cyan-300/40 underline-offset-4"
+        >
+          {match[3]}
+        </a>
+      );
+    } else if (match[5] !== undefined) {
+      nodes.push(
+        <code key={`code-${key++}`} className="rounded bg-slate-900 px-1.5 py-0.5 font-mono text-[0.95em] text-cyan-200">
+          {match[5]}
+        </code>
+      );
+    }
+
+    lastIndex = pattern.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    nodes.push(text.slice(lastIndex));
+  }
+
+  return nodes;
+}
+
+function SimpleMarkdown({ markdown }) {
+  if (!markdown) {
+    return null;
+  }
+
+  const blocks = markdown
+    .replace(/\r\n/g, '\n')
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean);
+
+  let listKey = 0;
+
+  return (
+    <div className="space-y-5">
+      {blocks.map((block, index) => {
+        if (/^---+$/.test(block)) {
+          return <hr key={`hr-${index}`} className="my-8 border-slate-800" />;
+        }
+
+        if (block.startsWith('### ')) {
+          return (
+            <h3 key={`h3-${index}`} className="mt-8 font-sans text-xl font-semibold text-slate-100">
+              {renderInlineMarkdown(block.slice(4))}
+            </h3>
+          );
+        }
+
+        if (block.startsWith('## ')) {
+          return (
+            <h2 key={`h2-${index}`} className="mt-10 border-b border-slate-800 pb-3 font-sans text-2xl font-bold text-white">
+              {renderInlineMarkdown(block.slice(3))}
+            </h2>
+          );
+        }
+
+        if (block.startsWith('# ')) {
+          return (
+            <h1 key={`h1-${index}`} className="mt-6 font-sans text-4xl font-bold tracking-tight text-white md:text-5xl">
+              {renderInlineMarkdown(block.slice(2))}
+            </h1>
+          );
+        }
+
+        if (/^[-*] /m.test(block)) {
+          const items = block.split('\n').map((line) => line.replace(/^[-*]\s+/, '').trim()).filter(Boolean);
+          return (
+            <ul key={`ul-${listKey++}`} className="list-disc space-y-3 pl-6 text-sm leading-8 text-slate-300 md:text-base">
+              {items.map((item, itemIndex) => (
+                <li key={`li-${index}-${itemIndex}`}>{renderInlineMarkdown(item)}</li>
+              ))}
+            </ul>
+          );
+        }
+
+        if (/^\d+\. /m.test(block)) {
+          const items = block.split('\n').map((line) => line.replace(/^\d+\.\s+/, '').trim()).filter(Boolean);
+          return (
+            <ol key={`ol-${listKey++}`} className="list-decimal space-y-3 pl-6 text-sm leading-8 text-slate-300 md:text-base">
+              {items.map((item, itemIndex) => (
+                <li key={`oli-${index}-${itemIndex}`}>{renderInlineMarkdown(item)}</li>
+              ))}
+            </ol>
+          );
+        }
+
+        if (block.startsWith('```') && block.endsWith('```')) {
+          const code = block.replace(/^```[^\n]*\n?/, '').replace(/\n?```$/, '');
+          return (
+            <pre key={`pre-${index}`} className="my-5 overflow-x-auto">
+              <code className="block overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/80 p-4 font-mono text-sm text-slate-200">
+                {code}
+              </code>
+            </pre>
+          );
+        }
+
+        return (
+          <p key={`p-${index}`} className="text-sm leading-8 text-slate-300 md:text-base">
+            {renderInlineMarkdown(block)}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+class MarkdownErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.markdown !== this.props.markdown && this.state.hasError) {
+      this.setState({ hasError: false });
+    }
+  }
+
+  render() {
+    const { hasError } = this.state;
+    const { markdown } = this.props;
+
+    if (!markdown) {
+      return null;
+    }
+
+    if (hasError) {
+      return (
+        <div className="whitespace-pre-wrap text-sm leading-8 text-slate-300 md:text-base">
+          {markdown}
+        </div>
+      );
+    }
+
+    return <SimpleMarkdown markdown={markdown} />;
+  }
+}
 
 function getRepoNameFromPath() {
   const match = window.location.pathname.match(/^\/ios_app_(.+)$/);
@@ -13,7 +187,6 @@ function App() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [bannerConfig, setBannerConfig] = useState(null);
-  const [overlayConfig, setOverlayConfig] = useState(null);
   const [ribbonConfig, setRibbonConfig] = useState(null);
   const [profile, setProfile] = useState(null);
 
@@ -26,10 +199,9 @@ function App() {
       }
 
       try {
-        const [projectResponse, bannerResponse, overlayResponse, ribbonResponse, profileResponse] = await Promise.all([
+        const [projectResponse, bannerResponse, ribbonResponse, profileResponse] = await Promise.all([
           fetch(`${SERVER_URL}/api/ios_app/${encodeURIComponent(repoName)}`),
           fetch(`${SERVER_URL}/api/config/announcement?component=banner`),
-          fetch(`${SERVER_URL}/api/config/announcement?component=overlay`),
           fetch(`${SERVER_URL}/api/config/announcement?component=ribbon`),
           fetch(`${SERVER_URL}/api/personal_me/profile`)
         ]);
@@ -44,10 +216,6 @@ function App() {
 
         if (bannerResponse.ok) {
           setBannerConfig(await bannerResponse.json());
-        }
-
-        if (overlayResponse.ok) {
-          setOverlayConfig(await overlayResponse.json());
         }
 
         if (ribbonResponse.ok) {
@@ -71,7 +239,6 @@ function App() {
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <DevBanner config={bannerConfig} />
       <DevRibbon config={ribbonConfig} />
-      {/* <DevOverlay config={overlayConfig} /> */}
 
       <div className="grid-overlay pointer-events-none fixed inset-0" />
 
@@ -155,13 +322,11 @@ function App() {
               )}
             </section>
 
-            <section className="mt-8 rounded-[2rem] border border-slate-800 bg-slate-950/70 p-6 md:p-8">
+            <section className="mt-8 rounded-[2rem] border border-slate-800 p-6 md:p-8 border-transparent bg-transparent">
               <h2 className="font-sans text-2xl font-bold text-white">Description</h2>
-              <div className="mt-5 space-y-4 text-sm leading-7 text-slate-300 md:text-base">
+              <div className="mt-5 space-y-4">
                 <p>{project.description}</p>
-                {(project.long_description || []).map((paragraph) => (
-                  <p key={paragraph}>{paragraph}</p>
-                ))}
+                <MarkdownErrorBoundary markdown={project.readme_markdown} />
               </div>
             </section>
 
