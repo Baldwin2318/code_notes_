@@ -1,9 +1,48 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import bodyParser from "body-parser";
 import cors from "cors";
 import express from 'express';
 import http from 'http';
-import baldwin_web_router1 from './routes/baldwin_web_router1.js';
-import ios_project_router from './routes/ios_project_router.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+function loadLocalEnv() {
+  const envPath = path.join(__dirname, '.env');
+  if (!fs.existsSync(envPath)) return;
+
+  const lines = fs.readFileSync(envPath, 'utf8').split(/\r?\n/);
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+
+    const separatorIndex = line.indexOf('=');
+    if (separatorIndex <= 0) continue;
+
+    const key = line.slice(0, separatorIndex).trim();
+    let value = line.slice(separatorIndex + 1).trim();
+
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+
+    if (!(key in process.env)) {
+      process.env[key] = value;
+    }
+  }
+}
+
+loadLocalEnv();
+
+const [{ default: baldwin_web_router1 }, { default: ios_project_router }] = await Promise.all([
+  import('./routes/baldwin_web_router1.js'),
+  import('./routes/ios_project_router.js')
+]);
 
 const app = express();
 const server = http.createServer(app);
