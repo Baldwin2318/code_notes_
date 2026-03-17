@@ -73,7 +73,7 @@ async function fetchRepoTree(repoName) {
   }
 }
 
-async function fetchReadmeDescription(repoName, branch) {
+async function fetchReadmeMarkdown(repoName, branch) {
   const readmeCandidates = ['README.md', 'README.MD', 'readme.md'];
 
   for (const candidate of readmeCandidates) {
@@ -89,21 +89,13 @@ async function fetchReadmeDescription(repoName, branch) {
 
       if (!readmeData?.content) continue;
 
-      const decoded = Buffer.from(readmeData.content, 'base64').toString('utf8');
-      const sections = decoded
-        .split(/\n{2,}/)
-        .map((section) => section.replace(/^#+\s*/gm, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').trim())
-        .filter(Boolean)
-        .filter((section) => !section.startsWith('!['))
-        .slice(0, 3);
-
-      return sections;
+      return Buffer.from(readmeData.content, 'base64').toString('utf8');
     } catch (error) {
       continue;
     }
   }
 
-  return [];
+  return '';
 }
 
 async function fetchIOSRepoDetails(repoName) {
@@ -120,14 +112,14 @@ async function fetchIOSRepoDetails(repoName) {
 
   const appIconPath = findAppIcon(treeItems);
   const screenshotPaths = findScreenshots(treeItems);
-  const readmeSections = await fetchReadmeDescription(repoName, branch);
+  const readmeMarkdown = await fetchReadmeMarkdown(repoName, branch);
 
   return {
     id: repo.id,
     repo_name: repo.name,
     title: repo.name,
     description: repo.description || 'No repository description available.',
-    long_description: readmeSections,
+    readme_markdown: readmeMarkdown,
     repo_url: repo.html_url,
     project_url: repo.homepage || '',
     year: new Date(repo.created_at).getFullYear(),
