@@ -26,6 +26,9 @@ server/routes/static/splice_log_page/
 server/routes/static/build_ios_project_page/
 shared_components/node_modules/
 
+# shared data
+shared_data/*.sql
+
 # Generated static files
 server/routes/static/**/*.js
 server/routes/static/**/*.css
