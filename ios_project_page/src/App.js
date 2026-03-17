@@ -292,6 +292,16 @@ function App() {
                   <div className="mt-4 flex flex-wrap gap-3 text-xs uppercase tracking-[0.18em] text-slate-400 md:mt-6">
                     <span className="rounded-full border border-slate-700 px-3 py-2">{project.year}</span>
                     <span className="rounded-full border border-slate-700 px-3 py-2">{project.repo_name}</span>
+                    {project.repo_url ? (
+                      <a
+                        href={project.repo_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-full border border-cyan-300/35 px-3 py-2 text-cyan-300 transition hover:border-cyan-300/70 hover:bg-cyan-300/10"
+                      >
+                        View Repo
+                      </a>
+                    ) : null}
                   </div>
                 </div>
               </div>
