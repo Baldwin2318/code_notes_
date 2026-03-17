@@ -244,7 +244,7 @@ function App() {
 
       <main className="relative mx-auto w-full max-w-6xl px-5 py-8 md:px-10 md:py-12">
         <a href="/" className="text-xs uppercase tracking-[0.28em] text-cyan-300/80">
-          Back to portfolio
+          &lt; Back to portfolio
         </a>
 
         {loading && (
@@ -263,16 +263,16 @@ function App() {
         {!loading && !error && project && (
           <>
             <section className="mt-10 overflow-hidden rounded-[2rem] border border-transparent bg-transparent">
-              <div className="grid gap-8 px-6 py-8 md:grid-cols-[160px_1fr] md:px-10 md:py-10">
-                <div className="flex items-start justify-center md:justify-start">
+              <div className="grid grid-cols-[96px_1fr] items-start gap-5 px-5 py-8 md:grid-cols-[160px_1fr] md:gap-8 md:px-10 md:py-10">
+                <div className="flex items-start justify-start">
                   {project.app_icon_url ? (
                     <img
                       src={project.app_icon_url}
                       alt={`${project.title} icon`}
-                      className="h-36 w-36 rounded-[2rem] border border-slate-700/70 bg-slate-900 object-cover shadow-2xl"
+                      className="h-24 w-24 rounded-[1.5rem] border border-slate-700/70 bg-slate-900 object-cover shadow-2xl md:h-36 md:w-36 md:rounded-[2rem]"
                     />
                   ) : (
-                    <div className="flex h-36 w-36 items-center justify-center rounded-[2rem] border border-slate-700/70 bg-slate-900 font-sans text-4xl font-bold text-cyan-200">
+                    <div className="flex h-24 w-24 items-center justify-center rounded-[1.5rem] border border-slate-700/70 bg-slate-900 font-sans text-3xl font-bold text-cyan-200 md:h-36 md:w-36 md:rounded-[2rem] md:text-4xl">
                       {project.title.slice(0, 2).toUpperCase()}
                     </div>
                   )}
@@ -281,15 +281,15 @@ function App() {
                 <div className="flex flex-col justify-between">
                   <div>
                     <p className="text-xs uppercase tracking-[0.32em] text-cyan-300/70">IOS App Projects</p>
-                    <h1 className="mt-3 font-sans text-4xl font-bold tracking-tight text-white md:text-5xl">
+                    <h1 className="mt-2 font-sans text-3xl font-bold tracking-tight text-white leading-none sm:text-[2.6rem] md:mt-3 md:text-5xl">
                       {project.title}
                     </h1>
-                    <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300 md:text-base">
+                    <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300 md:mt-4 md:text-base">
                       {project.description}
                     </p>
                   </div>
 
-                  <div className="mt-6 flex flex-wrap gap-3 text-xs uppercase tracking-[0.18em] text-slate-400">
+                  <div className="mt-4 flex flex-wrap gap-3 text-xs uppercase tracking-[0.18em] text-slate-400 md:mt-6">
                     <span className="rounded-full border border-slate-700 px-3 py-2">{project.year}</span>
                     <span className="rounded-full border border-slate-700 px-3 py-2">{project.repo_name}</span>
                   </div>
