@@ -41,7 +41,8 @@ function findScreenshots(tree) {
     .filter((p) => (
       p.startsWith('SCREENSHOTS/') &&
       !p.endsWith('/') &&
-      (p.endsWith('.png') || p.endsWith('.jpg') || p.endsWith('.jpeg') || p.endsWith('.webp'))
+      (p.endsWith('.png') || p.endsWith('.jpg') || p.endsWith('.jpeg') || p.endsWith('.webp') || 
+        p.endsWith('.PNG') || p.endsWith('.JPG') || p.endsWith('.JPEG') || p.endsWith('.WEBP'))
     ))
     .sort((left, right) => left.localeCompare(right, undefined, { numeric: true }));
 }
