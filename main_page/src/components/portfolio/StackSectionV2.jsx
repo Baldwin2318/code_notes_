@@ -26,7 +26,7 @@ function TechCard({ item, meta }) {
   const isUrl = meta.icon?.startsWith('http');
 
   return (
-    <div className="group flex shrink-0 items-center gap-3 rounded-xl border border-slate-700/80 bg-slate-900/60 px-4 py-3 transition hover:-translate-y-0.5 hover:border-cyan-300/50">
+    <div className="group flex shrink-0 items-center gap-3 rounded-xl border border-slate-700/80 bg-slate-900/60 px-4 py-3 transition">
       <div className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded border ${meta.accent}`}>
         {isUrl ? (
           <img src={meta.icon} alt={item} className="h-4 w-4 object-contain" />
@@ -60,7 +60,7 @@ function CarouselRow({ items, techMeta, duration = 30 }) {
           width: 'max-content',
           animation: `marquee-${pct} ${duration}s linear infinite`,
         }}
-        onMouseEnter={e => e.currentTarget.style.animationPlayState = 'paused'}
+        // onMouseEnter={e => e.currentTarget.style.animationPlayState = 'paused'}
         onMouseLeave={e => e.currentTarget.style.animationPlayState = 'running'}
       >
         {repeated.map((item, index) => {
