@@ -1,4 +1,5 @@
 import React from 'react';
+import Skeleton from './Skeleton';
 
 function getProjectInitials(title = '') {
   return title
@@ -9,7 +10,7 @@ function getProjectInitials(title = '') {
     .join('') || 'iOS';
 }
 
-function IOSProjects({ projects = [] }) {
+function IOSProjects({ projects = [], loading = false }) {
   return (
     <section id="ios-app-projects" data-reveal className="py-20 md:py-28">
       <div className="flex items-end justify-between gap-4">
@@ -18,11 +19,25 @@ function IOSProjects({ projects = [] }) {
         </div>
       </div>
 
-      {projects.length === 0 && (
+      {loading && (
+        <div className="mt-8 overflow-x-auto pb-4">
+          <div className="flex min-w-max gap-5">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <article key={`ios-skeleton-${index}`}>
+                <div className="flex items-center gap-4">
+                  <Skeleton className="h-16 w-16 rounded-2xl" />
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!loading && projects.length === 0 && (
         <p className="mt-6 text-sm text-slate-400">No iOS app repositories found.</p>
       )}
 
-      {projects.length > 0 && (
+      {!loading && projects.length > 0 && (
         <div className="mt-8 overflow-x-auto pb-4">
           <div className="flex min-w-max gap-5">
             {projects.map((project) => (

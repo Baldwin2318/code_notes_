@@ -1,7 +1,8 @@
 import React, { useRef, useEffect } from 'react';
 import StatusPill from './StatusPill';
+import Skeleton from './Skeleton';
 
-function ProjectSectionGithub({ projects = [] }) {
+function ProjectSectionGithub({ projects = [], loading = false }) {
   const trackRef = useRef(null);
   const animRef = useRef(null);
   const offsetRef = useRef(0);
@@ -30,6 +31,43 @@ function ProjectSectionGithub({ projects = [] }) {
     animRef.current = requestAnimationFrame(step);
     return () => cancelAnimationFrame(animRef.current);
   }, [projects]);
+
+  if (loading) {
+    return (
+      <section id="github-projects" data-reveal className="py-20 md:py-28">
+        <h2 className="text-2xl font-bold text-slate-100 md:text-3xl">GitHub Projects</h2>
+        <div className="mt-8 flex gap-4 overflow-hidden">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <article
+              key={`github-skeleton-${index}`}
+              className="w-72 shrink-0 rounded-xl border border-slate-700/80 bg-slate-900/60 p-5"
+            >
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-3 w-12 rounded-full" />
+                <Skeleton className="h-6 w-16 rounded-full" />
+              </div>
+              <Skeleton className="mt-4 h-7 w-2/3 rounded-xl" />
+              <div className="mt-3 space-y-2">
+                <Skeleton className="h-4 w-full rounded-full" />
+                <Skeleton className="h-4 w-5/6 rounded-full" />
+                <Skeleton className="h-4 w-2/3 rounded-full" />
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Skeleton className="h-6 w-14 rounded-md" />
+                <Skeleton className="h-6 w-20 rounded-md" />
+                <Skeleton className="h-6 w-16 rounded-md" />
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Skeleton className="h-6 w-20 rounded-md" />
+                <Skeleton className="h-6 w-24 rounded-md" />
+              </div>
+              <Skeleton className="mt-5 h-4 w-10 rounded-full" />
+            </article>
+          ))}
+        </div>
+      </section>
+    );
+  }
 
   if (projects.length === 0) {
     return (

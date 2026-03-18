@@ -1,110 +1,110 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import SERVER_URL from 'shared_data/react_critical_data.jsx';
 import { DevBanner, DevOverlay, DevRibbon, Footer } from 'shared_components';
-import Navbar from './components/portfolio/Navbar';
 import HeroSection from './components/portfolio/HeroSection';
 import AboutSection from './components/portfolio/AboutSection';
 import StackSectionV2 from './components/portfolio/StackSectionV2';
 import ProjectSectionGithub from './components/portfolio/ProjectSectionGithub';
 import IOSProjects from './components/portfolio/iosProjects';
-import ContactSection from './components/portfolio/ContactSection';
-import { fallbackProfile, navLinks } from './components/portfolio/constants';
+import { fallbackProfile } from './components/portfolio/constants';
 import useTyping from './hooks/useTyping';
 
 function App() {
-  const [profile, setProfile] = useState(fallbackProfile);
+  const [profile, setProfile] = useState(null);
   const [bannerConfig, setBannerConfig] = useState(null);
   const [overlayConfig, setOverlayConfig] = useState(null);
   const [ribbonConfig, setRibbonConfig] = useState(null);
-  const [scrolled, setScrolled] = useState(false);
   const [technologies, setTechnologies] = useState([]);
   const [githubProjects, setGithubProjects] = useState([]);
   const [iosProjects, setIosProjects] = useState([]);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [technologiesLoading, setTechnologiesLoading] = useState(true);
+  const [githubProjectsLoading, setGithubProjectsLoading] = useState(true);
+  const [iosProjectsLoading, setIosProjectsLoading] = useState(true);
 
   const typedRole = useTyping(profile?.role_title ? [profile.role_title] : [], 75, 1800);
 
   useEffect(() => {
-    async function loadPersonalMe() {
+    let cancelled = false;
+
+    async function fetchResource(url, onSuccess, onComplete) {
       try {
-        const [
-          profileResponse,
-          bannerResponse,
-          overlayResponse,
-          ribbonResponse,
-          techResponse,
-          githubProjectsResponse,
-          iosProjectsResponse
-        ] =
-          await Promise.all([
-            fetch(`${SERVER_URL}/api/personal_me/profile`),
-            fetch(`${SERVER_URL}/api/config/announcement?component=banner`),
-            fetch(`${SERVER_URL}/api/config/announcement?component=overlay`),
-            fetch(`${SERVER_URL}/api/config/announcement?component=ribbon`),
-            fetch(`${SERVER_URL}/api/personal_me/technologies`),
-            fetch(`${SERVER_URL}/api/personal_me/github/projects`),
-            fetch(`${SERVER_URL}/api/personal_me/github/projects/ios`)
-          ]);
-
-        if (profileResponse.ok) {
-          const profileData = await profileResponse.json();
-          if (profileData && typeof profileData === 'object') {
-            setProfile((prev) => ({ ...prev, ...profileData }));
-          }
-        }
-
-        if (bannerResponse.ok) {
-          const bannerData = await bannerResponse.json();
-          if (bannerData && typeof bannerData === 'object') {
-            setBannerConfig(bannerData);
-          }
-        }
-
-        if (overlayResponse.ok) {
-          const overlayData = await overlayResponse.json();
-          if (overlayData && typeof overlayData === 'object') {
-            setOverlayConfig(overlayData);
-          }
-        }
-
-        if (ribbonResponse.ok) {
-          const ribbonData = await ribbonResponse.json();
-          if (ribbonData && typeof ribbonData === 'object') {
-            setRibbonConfig(ribbonData);
-          }
-        }
-
-        if (techResponse.ok) {
-          const techData = await techResponse.json();
-          if (Array.isArray(techData)) {
-            setTechnologies(techData);
-          }
-        }
-
-        if (githubProjectsResponse.ok) {
-          const githubProjectsData = await githubProjectsResponse.json();
-          if (Array.isArray(githubProjectsData)) {
-            setGithubProjects(githubProjectsData);
-          }
-        }
-
-        if (iosProjectsResponse.ok) {
-          const iosProjectsData = await iosProjectsResponse.json();
-          if (Array.isArray(iosProjectsData)) {
-            setIosProjects(iosProjectsData);
-          }
+        const response = await fetch(url);
+        if (!response.ok || cancelled) return;
+        const data = await response.json();
+        if (!cancelled) {
+          onSuccess(data);
         }
       } catch (error) {
         // Keep content blank if API is unavailable.
+      } finally {
+        if (!cancelled && onComplete) {
+          onComplete();
+        }
       }
     }
 
-    loadPersonalMe();
-  }, []);
+    fetchResource(
+      `${SERVER_URL}/api/personal_me/profile`,
+      (profileData) => {
+        if (profileData && typeof profileData === 'object') {
+          setProfile(profileData);
+        }
+      },
+      () => setProfileLoading(false)
+    );
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 30);
-    window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
+    fetchResource(`${SERVER_URL}/api/config/announcement?component=banner`, (bannerData) => {
+      if (bannerData && typeof bannerData === 'object') {
+        setBannerConfig(bannerData);
+      }
+    });
+
+    fetchResource(`${SERVER_URL}/api/config/announcement?component=overlay`, (overlayData) => {
+      if (overlayData && typeof overlayData === 'object') {
+        setOverlayConfig(overlayData);
+      }
+    });
+
+    fetchResource(`${SERVER_URL}/api/config/announcement?component=ribbon`, (ribbonData) => {
+      if (ribbonData && typeof ribbonData === 'object') {
+        setRibbonConfig(ribbonData);
+      }
+    });
+
+    fetchResource(
+      `${SERVER_URL}/api/personal_me/technologies`,
+      (techData) => {
+        if (Array.isArray(techData)) {
+          setTechnologies(techData);
+        }
+      },
+      () => setTechnologiesLoading(false)
+    );
+
+    fetchResource(
+      `${SERVER_URL}/api/personal_me/github/projects`,
+      (githubProjectsData) => {
+        if (Array.isArray(githubProjectsData)) {
+          setGithubProjects(githubProjectsData);
+        }
+      },
+      () => setGithubProjectsLoading(false)
+    );
+
+    fetchResource(
+      `${SERVER_URL}/api/personal_me/github/projects/ios`,
+      (iosProjectsData) => {
+        if (Array.isArray(iosProjectsData)) {
+          setIosProjects(iosProjectsData);
+        }
+      },
+      () => setIosProjectsLoading(false)
+    );
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -148,21 +148,21 @@ function App() {
       {/* <Navbar scrolled={scrolled} links={navLinks} name={profile.full_name || 'Portfolio'} /> */}
 
       <main className="relative mx-auto w-full max-w-6xl px-6 md:px-10">
-        <HeroSection profile={profile} typedRole={typedRole} />
-        <AboutSection bio={profile.bio || ''} />
-        <IOSProjects projects={iosProjects} />
-        <StackSectionV2 stack={profile.tech_stack || []} techMeta={techMeta} />
-        <ProjectSectionGithub projects={githubProjects} />
+        <HeroSection profile={profile || fallbackProfile} typedRole={typedRole} loading={profileLoading} />
+        <AboutSection bio={profile?.bio || ''} loading={profileLoading} />
+        <IOSProjects projects={iosProjects} loading={iosProjectsLoading} />
+        <StackSectionV2 stack={profile?.tech_stack || []} techMeta={techMeta} loading={technologiesLoading || profileLoading} />
+        <ProjectSectionGithub projects={githubProjects} loading={githubProjectsLoading} />
         {/* <ContactSection
           email={profile.email || ''}
           github={profile.github || profile.github_url || ''}
           linkedin={profile.linkedin || profile.linkedin_url || ''}
         /> */}
         <Footer
-          fullName={profile.full_name || 'Baldwin'}
-          email={profile.email || ''}
-          github={profile.github || profile.github_url || ''}
-          linkedin={profile.linkedin || profile.linkedin_url || ''}
+          fullName={profile?.full_name || 'Baldwin'}
+          email={profile?.email || ''}
+          github={profile?.github || profile?.github_url || ''}
+          linkedin={profile?.linkedin || profile?.linkedin_url || ''}
         />
       </main>
     </div>

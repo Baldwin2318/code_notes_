@@ -1,4 +1,5 @@
 import React from 'react';
+import Skeleton from './Skeleton';
 
 function TechCard({ item, meta }) {
   const isUrl = meta.icon?.startsWith('http');
@@ -53,7 +54,27 @@ function CarouselRow({ items, techMeta, duration = 30 }) {
   );
 }
 
-function StackSectionV2({ stack, techMeta }) {
+function StackSectionV2({ stack, techMeta, loading = false }) {
+  if (loading) {
+    return (
+      <section id="stack" data-reveal className="py-20 md:py-28">
+        <h2 className="text-2xl font-bold text-slate-100 md:text-3xl">Tech Stack</h2>
+        <div className="mt-8 flex flex-col gap-3">
+          <div className="flex flex-wrap gap-3">
+            {Array.from({ length: 7 }).map((_, index) => (
+              <Skeleton key={`stack-skeleton-row-1-${index}`} className="h-[56px] w-32 rounded-xl" />
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <Skeleton key={`stack-skeleton-row-2-${index}`} className="h-[56px] w-28 rounded-xl" />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   if (!stack || stack.length === 0) {
     return (
       <section id="stack" data-reveal className="py-20 md:py-28">

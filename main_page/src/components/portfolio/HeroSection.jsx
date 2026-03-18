@@ -1,6 +1,7 @@
 import React from 'react';
+import Skeleton from './Skeleton';
 
-function HeroSection({ profile, typedRole }) {
+function HeroSection({ profile, typedRole, loading = false }) {
   const avatarSrc =
     profile.avatar_url || (profile.avatar_base64 ? `data:image/jpeg;base64,${profile.avatar_base64}` : '');
 
@@ -8,24 +9,36 @@ function HeroSection({ profile, typedRole }) {
     <section id="hero" data-reveal className="border-b border-cyan-300/20 pb-20 pt-14 md:pb-28 md:pt-20">
       <div className="flex flex-col-reverse gap-8 md:flex-row md:items-start md:justify-between md:gap-12">
         <div className="min-w-0 text-center md:text-left">
-          <h1 className="mt-5 max-w-5xl text-5xl font-extrabold leading-[0.92] text-slate-100 md:text-[5rem]">
-            {profile.full_name || 'Portfolio'}
-          </h1>
-          {profile.location && (
-            <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-300 md:text-base">
-              Based in {profile.location} 🇨🇦
-            </p>
+          {loading ? (
+            <>
+              <Skeleton className="mt-5 h-6 w-40 rounded-full md:h-7" />
+              <Skeleton className="mt-5 h-14 w-full max-w-3xl rounded-2xl md:h-20" />
+              <Skeleton className="mt-4 h-5 w-64 rounded-full" />
+            </>
+          ) : (
+            <>
+              <h1 className="mt-5 max-w-5xl text-5xl font-extrabold leading-[0.92] text-slate-100 md:text-[5rem]">
+                {profile.full_name || 'Portfolio'}
+              </h1>
+              {profile.location && (
+                <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-300 md:text-base">
+                  Based in {profile.location} 🇨🇦
+                </p>
+              )}
+              <p className="mt-5 font-mono text-sm text-cyan-300 md:text-base">
+                {typedRole || profile.role_title || ''}
+                {(typedRole || profile.role_title) && <span className="typing-cursor" />}
+              </p>
+            </>
           )}
-          <p className="mt-5 font-mono text-sm text-cyan-300 md:text-base">
-            {typedRole || profile.role_title || ''}
-            {(typedRole || profile.role_title) && <span className="typing-cursor" />}
-          </p>
         </div>
 
         <div className="relative mx-auto shrink-0 md:mx-0">
           <div className="rounded-full border border-cyan-300/40 bg-gradient-to-b from-cyan-400/20 to-slate-900/20 p-1 shadow-lg shadow-cyan-500/10">
             <div className="h-32 w-32 overflow-hidden rounded-full bg-slate-900 md:h-48 md:w-48">
-              {avatarSrc ? (
+              {loading ? (
+                <Skeleton className="h-full w-full rounded-full" />
+              ) : avatarSrc ? (
                 <img src={avatarSrc} alt={profile.full_name || 'Profile'} className="h-full w-full object-cover" />
               ) : (
                 <div className="flex h-full w-full items-center justify-center font-mono text-sm text-slate-500">
