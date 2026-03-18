@@ -53,6 +53,14 @@ function findAppIcon(tree) {
   return iconFile || null;
 }
 
+const CHAT_FALLBACK = 'I only answer questions about this portfolio.';
+
+function compactText(value, maxLength = 500) {
+  const text = String(value || '').replace(/\s+/g, ' ').trim();
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength - 1)}...`;
+}
+
 function baldwin_web_router1(app) {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
@@ -462,6 +470,165 @@ function baldwin_web_router1(app) {
     });
   };
 
+  let portfolioChatCache = { expiresAt: 0, value: null };
+
+  async function buildPortfolioChatContext() {
+    if (portfolioChatCache.value && portfolioChatCache.expiresAt > Date.now()) {
+      return portfolioChatCache.value;
+    }
+
+    const [projects, client] = await Promise.all([
+      fetchGithubProjects(),
+      getDbClient()
+    ]);
+
+    try {
+      const [profileResult, techResult] = await Promise.all([
+        client.query(`
+          WITH latest_about AS (
+            SELECT
+              id,
+              full_name,
+              title AS role_title,
+              bio,
+              email,
+              github_url AS github,
+              linkedin_url AS linkedin,
+              location,
+              open_to_work,
+              updated_at
+            FROM personal.about_me
+            ORDER BY updated_at DESC NULLS LAST, id DESC
+            LIMIT 1
+          )
+          SELECT *
+          FROM latest_about
+        `),
+        client.query(`
+          SELECT name, category
+          FROM projects.technology
+          ORDER BY name
+        `)
+      ]);
+
+      const profile = profileResult.rows[0] || {};
+      const technologies = techResult.rows || [];
+      const iosProjects = projects.filter((project) => project.is_ios_app);
+
+      const context = {
+        profile: {
+          full_name: profile.full_name || '',
+          role_title: profile.role_title || '',
+          bio: compactText(profile.bio || '', 900),
+          location: profile.location || '',
+          open_to_work: profile.open_to_work ?? null,
+          github: profile.github || '',
+          linkedin: profile.linkedin || '',
+          email: profile.email || ''
+        },
+        technologies: technologies.slice(0, 40).map((item) => ({
+          name: item.name,
+          category: item.category || ''
+        })),
+        github_projects: projects.slice(0, 16).map((project) => ({
+          title: project.title,
+          description: compactText(project.description, 280),
+          year: project.year,
+          stack: (project.stack || []).slice(0, 8),
+          frameworks: (project.frameworks || []).slice(0, 10),
+          repo_url: project.repo_url || '',
+          is_ios_app: Boolean(project.is_ios_app)
+        })),
+        ios_projects: iosProjects.slice(0, 10).map((project) => ({
+          title: project.title,
+          description: compactText(project.description, 280),
+          year: project.year,
+          stack: (project.stack || []).slice(0, 8),
+          frameworks: (project.frameworks || []).slice(0, 10),
+          repo_url: project.repo_url || ''
+        }))
+      };
+
+      portfolioChatCache = {
+        value: context,
+        expiresAt: Date.now() + 5 * 60 * 1000
+      };
+
+      return context;
+    } finally {
+      client.release();
+    }
+  }
+
+  async function askGeminiAboutPortfolio(message, context) {
+    if (!critical_data.GEMINI_API_KEY) {
+      throw new Error('GEMINI_API_KEY is missing. Add it to the server environment to enable the portfolio assistant.');
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(critical_data.GEMINI_MODEL)}:generateContent`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': critical_data.GEMINI_API_KEY
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
+            system_instruction: {
+              parts: [
+                {
+                  text: [
+                    "You are a portfolio assistant for Baldwin's personal website.",
+                    'Answer only using the provided portfolio data.',
+                    `If the answer is not supported by the provided data, reply exactly with: ${CHAT_FALLBACK}`,
+                    'Do not use outside knowledge.',
+                    'Do not guess, infer missing facts, or invent projects, dates, skills, or employers.',
+                    'Keep responses concise and practical.'
+                  ].join(' ')
+                }
+              ]
+            },
+            generationConfig: {
+              temperature: 0.2,
+              topP: 0.8,
+              maxOutputTokens: 220
+            },
+            contents: [
+              {
+                role: 'user',
+                parts: [
+                  {
+                    text: `Portfolio data:\n${JSON.stringify(context, null, 2)}\n\nQuestion: ${message}`
+                  }
+                ]
+              }
+            ]
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error?.message || 'Gemini request failed.');
+      }
+
+      const answer = data?.candidates?.[0]?.content?.parts
+        ?.map((part) => part?.text || '')
+        .join('')
+        .trim();
+
+      return answer || CHAT_FALLBACK;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
   app.get('/api/personal_me/github/projects', async (req, res) => {
 
     try {
@@ -479,6 +646,22 @@ function baldwin_web_router1(app) {
       res.json(iosProjects);
     } catch (err) {
       res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post('/api/chat/portfolio', async (req, res) => {
+    try {
+      const message = String(req.body?.message || '').trim();
+
+      if (!message) {
+        return res.status(400).json({ error: 'A message is required.' });
+      }
+
+      const context = await buildPortfolioChatContext();
+      const answer = await askGeminiAboutPortfolio(message, context);
+      return res.json({ answer });
+    } catch (err) {
+      return res.status(500).json({ error: err.message || 'Unable to answer right now.' });
     }
   });
 
