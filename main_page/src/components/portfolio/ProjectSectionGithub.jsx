@@ -23,6 +23,7 @@ function ProjectSectionGithub({ projects = [], loading = false }) {
   const animRef = useRef(null);
   const offsetRef = useRef(0);
   const pausedRef = useRef(false);
+  const [pendingProject, setPendingProject] = React.useState(null);
   const SPEED = 0.5;
 
   const items = [...projects, ...projects];
@@ -101,95 +102,116 @@ function ProjectSectionGithub({ projects = [], loading = false }) {
   }
 
   return (
-    <section id="github-projects" data-reveal className="py-20 md:py-28">
-      <div className="flex items-center gap-3">
-        <GithubLogo />
-        <h2 className="text-2xl font-bold text-slate-700 md:text-3xl">GitHub Projects</h2>
-      </div>
-
-      <div
-        className="relative mt-8 overflow-hidden"
-        style={{
-          maskImage: 'linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)',
-          WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)'
-        }}
-        onMouseEnter={() => { pausedRef.current = true; }}
-        onMouseLeave={() => { pausedRef.current = false; }}
-      >
-        <div
-          ref={trackRef}
-          className="flex gap-4 will-change-transform"
-          style={{ width: 'max-content' }}
-        >
-          {items.map((project, index) => (
-            <article
-              key={`${project.id}-${index}`}
-              className="group w-72 shrink-0 rounded-xl border border-slate-700/80 bg-slate-900/60 p-5 transition hover:-translate-y-1 hover:border-cyan-300/50"
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-xs uppercase tracking-[0.12em] text-slate-500">
-                  {project.year || 'Now'}
-                </span>
-                <StatusPill status={project.status || 'active'} />
-              </div>
-
-              <h3 className="mt-4 text-lg font-bold text-slate-100 truncate">{project.title}</h3>
-              <p className="mt-3 text-sm leading-6 text-slate-300 line-clamp-3">{project.description}</p>
-
-              <div className="mt-4">
-                <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500">Stack</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {(project.stack || []).length > 0 ? (
-                    project.stack.map((item) => (
-                      <span
-                        key={`${project.id}-stack-${item}-${index}`}
-                        className="rounded-md border border-cyan-400/30 bg-cyan-400/10 px-2 py-1 font-mono text-[11px] text-cyan-200"
-                      >
-                        {item}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-xs text-slate-500">No stack detected</span>
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-4">
-                <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500">Frameworks</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {(project.frameworks || []).length > 0 ? (
-                    project.frameworks.slice(0, 8).map((framework) => (
-                      <span
-                        key={`${project.id}-framework-${framework}-${index}`}
-                        className="rounded-md border border-slate-600/70 bg-slate-800/70 px-2 py-1 font-mono text-[11px] text-slate-200"
-                      >
-                        {framework}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-xs text-slate-500">No frameworks detected</span>
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-5 flex gap-4 text-sm">
-                {(project.html_url || project.repo_url) && (
-                  <a
-                    className="font-semibold text-cyan-300 transition hover:text-cyan-200"
-                    href={project.html_url || project.repo_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    Repo
-                  </a>
-                )}
-              </div>
-            </article>
-          ))}
+    <>
+      <section id="github-projects" data-reveal className="py-20 md:py-28">
+        <div className="flex items-center gap-3">
+          <GithubLogo />
+          <h2 className="text-2xl font-bold text-slate-700 md:text-3xl">GitHub Projects</h2>
         </div>
-      </div>
-    </section>
+
+        <div
+          className="relative mt-8 overflow-hidden"
+          style={{
+            maskImage: 'linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)'
+          }}
+          onMouseEnter={() => { pausedRef.current = true; }}
+          onMouseLeave={() => { pausedRef.current = false; }}
+        >
+          <div
+            ref={trackRef}
+            className="flex gap-4 will-change-transform"
+            style={{ width: 'max-content' }}
+          >
+            {items.map((project, index) => (
+              <article
+                key={`${project.id}-${index}`}
+                className="group w-72 shrink-0 rounded-xl border border-slate-700/80 bg-slate-900/60 p-5 transition hover:-translate-y-1 hover:border-cyan-300/50 cursor-pointer"
+                onClick={() => {
+                  if (project.html_url || project.repo_url) {
+                    setPendingProject(project);
+                  }
+                }}>
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-xs uppercase tracking-[0.12em] text-slate-500">
+                    {project.year || 'Now'}
+                  </span>
+                  <StatusPill status={project.status || 'active'} />
+                </div>
+
+                <h3 className="mt-4 text-lg font-bold text-slate-100 truncate">{project.title}</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-300 line-clamp-3">{project.description}</p>
+
+                <div className="mt-4">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500">Stack</p>
+                    <div className="flex flex-wrap gap-2">
+                      {(project.stack || []).length > 0 ? (
+                        project.stack.map((item) => (
+                          <span
+                            key={`${project.id}-stack-${item}-${index}`}
+                            className="rounded-md border border-cyan-400/30 bg-cyan-400/10 px-2 py-1 font-mono text-[11px] text-cyan-200"
+                          >
+                            {item}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-xs text-slate-500">No stack detected</span>
+                      )}
+                    </div>
+                </div>
+
+                <div className="mt-4">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500">Frameworks</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {(project.frameworks || []).length > 0 ? (
+                      project.frameworks.slice(0, 8).map((framework) => (
+                        <span
+                          key={`${project.id}-framework-${framework}-${index}`}
+                          className="rounded-md border border-slate-600/70 bg-slate-800/70 px-2 py-1 font-mono text-[11px] text-slate-200"
+                        >
+                          {framework}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-xs text-slate-500">No frameworks detected</span>
+                    )}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {pendingProject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-6">
+          <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-950 p-6 shadow-2xl shadow-black/40">
+            <h3 className="font-sans text-xl font-bold text-slate-100">Open GitHub repository?</h3>
+            <p className="mt-3 text-sm leading-6 text-slate-300">
+              Jump to the GitHub repo for <span className="font-semibold text-slate-100">{pendingProject.title}</span>?
+            </p>
+            <div className="mt-6 flex items-center justify-end gap-5">
+              <button
+                type="button"
+                className="text-sm font-medium text-slate-400 transition hover:text-slate-200"
+                onClick={() => setPendingProject(null)}
+              >
+                No
+              </button>
+              <a
+                href={pendingProject.html_url || pendingProject.repo_url}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full border border-cyan-300/35 px-4 py-2 text-sm font-semibold text-cyan-300 transition hover:border-cyan-300/70 hover:bg-cyan-300/10"
+                onClick={() => setPendingProject(null)}
+              >
+                Yes
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
