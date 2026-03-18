@@ -11,6 +11,8 @@ const SERVER_CRITICAL_DATA = {
   // Neon postgres connection string:
   // postgres://<user>:<password>@<host>/<db>?sslmode=require
   NEON_DATABASE_URL: process.env.NEON_DATABASE_URL || '',
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
+  GEMINI_MODEL: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
   DEBUG_STATE: false
 };
 
