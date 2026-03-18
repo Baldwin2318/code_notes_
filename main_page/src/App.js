@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import SERVER_URL from 'shared_data/react_critical_data.jsx';
-import { DevBanner, DevOverlay, DevRibbon, Footer } from 'shared_components';
+import { DevBanner, DevOverlay, DevRibbon, Footer, PortfolioChatWidget } from 'shared_components';
 import HeroSection from './components/portfolio/HeroSection';
 import AboutSection from './components/portfolio/AboutSection';
 import StackSectionV2 from './components/portfolio/StackSectionV2';
@@ -165,6 +165,15 @@ function App() {
           linkedin={profile?.linkedin || profile?.linkedin_url || ''}
         />
       </main>
+      <PortfolioChatWidget
+        apiUrl={`${SERVER_URL}/api/chat/portfolio`}
+        suggestedPrompts={[
+          'What iOS apps has he built?',
+          'What technologies does he use most?',
+          'Which GitHub projects are featured here?',
+          'Is he open to work?'
+        ]}
+      />
     </div>
   );
 }

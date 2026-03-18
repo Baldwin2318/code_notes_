@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { DevBanner, DevRibbon, Footer } from 'shared_components';
+import { DevBanner, DevRibbon, Footer, PortfolioChatWidget } from 'shared_components';
 import SERVER_URL from 'shared_data/react_critical_data.jsx';
 
 function Skeleton({ className = '' }) {
@@ -428,6 +428,15 @@ function App() {
           </>
         )}
       </main>
+      <PortfolioChatWidget
+        apiUrl={`${SERVER_URL}/api/chat/portfolio`}
+        suggestedPrompts={[
+          'What iOS apps has he built?',
+          'Tell me about the stack used in this portfolio.',
+          'Which GitHub projects are featured here?',
+          'How can I contact him?'
+        ]}
+      />
     </div>
   );
 }
