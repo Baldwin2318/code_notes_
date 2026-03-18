@@ -130,11 +130,11 @@ function baldwin_web_router1(app) {
     }, {});
 
     const announcement = announcementResult.rows[0] || null;
-    const enabled = component === 'banner' ? parseBoolean(settingMap.banner_enabled, false) : Boolean(announcement);
+    const enabled = Boolean(announcement);
 
     return {
       enabled,
-      message: announcement?.message || (component === 'banner' ? settingMap.banner_message || '' : ''),
+      message: announcement?.message || '',
       kind: announcement?.kind || 'dev',
       dismissible: announcement?.dismissible ?? true,
       component,
