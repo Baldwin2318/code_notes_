@@ -152,7 +152,7 @@ function PortfolioChatWidget({
             onChange: event => setInput(event.target.value),
             rows: 2,
             placeholder: placeholder,
-            className: "max-h-[48px] flex-1 resize-none rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-cyan-300/40"
+            className: "max-h-[48px] flex-1 resize-none rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-base text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-cyan-300/40 md:text-sm"
           }), /*#__PURE__*/_jsx("button", {
             type: "submit",
             disabled: isLoading || !input.trim(),
