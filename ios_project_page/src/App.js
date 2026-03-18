@@ -361,7 +361,6 @@ function App() {
 
                 <div className="flex flex-col justify-between">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.32em] text-cyan-300/70">IOS App Projects</p>
                     <h1 className="mt-2 font-sans text-3xl font-bold tracking-tight text-white leading-none sm:text-[2.6rem] md:mt-3 md:text-5xl">
                       {project.title}
                     </h1>
@@ -391,7 +390,6 @@ function App() {
             <section className="mt-8">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="font-sans text-2xl font-bold text-white">Screenshots</h2>
-                <p className="text-xs uppercase tracking-[0.22em] text-slate-500">From repo root /SCREENSHOTS</p>
               </div>
 
               {project.screenshots?.length > 0 ? (
