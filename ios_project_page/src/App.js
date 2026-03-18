@@ -131,7 +131,7 @@ function SimpleMarkdown({ markdown }) {
   let listKey = 0;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 break-words [overflow-wrap:anywhere]">
       {blocks.map((block, index) => {
         if (/^---+$/.test(block)) {
           return <hr key={`hr-${index}`} className="my-8 border-slate-800" />;
@@ -139,7 +139,7 @@ function SimpleMarkdown({ markdown }) {
 
         if (block.startsWith('### ')) {
           return (
-            <h3 key={`h3-${index}`} className="mt-8 font-sans text-xl font-semibold text-slate-100">
+            <h3 key={`h3-${index}`} className="mt-8 font-sans text-xl font-semibold text-slate-100 break-words [overflow-wrap:anywhere]">
               {renderInlineMarkdown(block.slice(4))}
             </h3>
           );
@@ -147,7 +147,7 @@ function SimpleMarkdown({ markdown }) {
 
         if (block.startsWith('## ')) {
           return (
-            <h2 key={`h2-${index}`} className="mt-10 border-b border-slate-800 pb-3 font-sans text-2xl font-bold text-white">
+            <h2 key={`h2-${index}`} className="mt-10 border-b border-slate-800 pb-3 font-sans text-2xl font-bold text-white break-words [overflow-wrap:anywhere]">
               {renderInlineMarkdown(block.slice(3))}
             </h2>
           );
@@ -155,7 +155,7 @@ function SimpleMarkdown({ markdown }) {
 
         if (block.startsWith('# ')) {
           return (
-            <h1 key={`h1-${index}`} className="mt-6 font-sans text-4xl font-bold tracking-tight text-white md:text-5xl">
+            <h1 key={`h1-${index}`} className="mt-6 font-sans text-4xl font-bold tracking-tight text-white md:text-5xl break-words [overflow-wrap:anywhere]">
               {renderInlineMarkdown(block.slice(2))}
             </h1>
           );
@@ -164,7 +164,7 @@ function SimpleMarkdown({ markdown }) {
         if (/^[-*] /m.test(block)) {
           const items = block.split('\n').map((line) => line.replace(/^[-*]\s+/, '').trim()).filter(Boolean);
           return (
-            <ul key={`ul-${listKey++}`} className="list-disc space-y-3 pl-6 text-sm leading-8 text-slate-300 md:text-base">
+            <ul key={`ul-${listKey++}`} className="list-disc space-y-3 pl-6 text-sm leading-8 text-slate-300 md:text-base break-words [overflow-wrap:anywhere]">
               {items.map((item, itemIndex) => (
                 <li key={`li-${index}-${itemIndex}`}>{renderInlineMarkdown(item)}</li>
               ))}
@@ -175,7 +175,7 @@ function SimpleMarkdown({ markdown }) {
         if (/^\d+\. /m.test(block)) {
           const items = block.split('\n').map((line) => line.replace(/^\d+\.\s+/, '').trim()).filter(Boolean);
           return (
-            <ol key={`ol-${listKey++}`} className="list-decimal space-y-3 pl-6 text-sm leading-8 text-slate-300 md:text-base">
+            <ol key={`ol-${listKey++}`} className="list-decimal space-y-3 pl-6 text-sm leading-8 text-slate-300 md:text-base break-words [overflow-wrap:anywhere]">
               {items.map((item, itemIndex) => (
                 <li key={`oli-${index}-${itemIndex}`}>{renderInlineMarkdown(item)}</li>
               ))}
@@ -187,7 +187,7 @@ function SimpleMarkdown({ markdown }) {
           const code = block.replace(/^```[^\n]*\n?/, '').replace(/\n?```$/, '');
           return (
             <pre key={`pre-${index}`} className="my-5 overflow-x-auto">
-              <code className="block overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/80 p-4 font-mono text-sm text-slate-200">
+              <code className="block overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950/80 p-4 font-mono text-sm text-slate-200 break-words [overflow-wrap:anywhere]">
                 {code}
               </code>
             </pre>
@@ -195,7 +195,7 @@ function SimpleMarkdown({ markdown }) {
         }
 
         return (
-          <p key={`p-${index}`} className="text-sm leading-8 text-slate-300 md:text-base">
+          <p key={`p-${index}`} className="text-sm leading-8 text-slate-300 md:text-base break-words [overflow-wrap:anywhere]">
             {renderInlineMarkdown(block)}
           </p>
         );
@@ -230,7 +230,7 @@ class MarkdownErrorBoundary extends React.Component {
 
     if (hasError) {
       return (
-        <div className="whitespace-pre-wrap text-sm leading-8 text-slate-300 md:text-base">
+        <div className="whitespace-pre-wrap text-sm leading-8 text-slate-300 md:text-base break-words [overflow-wrap:anywhere]">
           {markdown}
         </div>
       );
