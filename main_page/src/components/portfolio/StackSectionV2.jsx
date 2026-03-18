@@ -1,6 +1,27 @@
 import React from 'react';
 import Skeleton from './Skeleton';
 
+function TechStackLogo() {
+  return (
+    <span className="inline-flex h-16 w-16 items-center justify-center text-slate-700">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+        className="h-12 w-12"
+      >
+        <path d="M12 4 4 8l8 4 8-4-8-4Z" />
+        <path d="M4 12l8 4 8-4" />
+        <path d="M4 16l8 4 8-4" />
+      </svg>
+    </span>
+  );
+}
+
 function TechCard({ item, meta }) {
   const isUrl = meta.icon?.startsWith('http');
 
@@ -58,7 +79,10 @@ function StackSectionV2({ stack, techMeta, loading = false }) {
   if (loading) {
     return (
       <section id="stack" data-reveal className="py-20 md:py-28">
-        <h2 className="text-2xl font-bold text-slate-100 md:text-3xl">Tech Stack</h2>
+        <div className="flex items-center gap-3">
+          <TechStackLogo />
+          <h2 className="text-2xl font-bold text-slate-700 md:text-3xl">Tech Stack</h2>
+        </div>
         <div className="mt-8 flex flex-col gap-3">
           <div className="flex flex-wrap gap-3">
             {Array.from({ length: 7 }).map((_, index) => (
@@ -78,7 +102,10 @@ function StackSectionV2({ stack, techMeta, loading = false }) {
   if (!stack || stack.length === 0) {
     return (
       <section id="stack" data-reveal className="py-20 md:py-28">
-        <h2 className="text-2xl font-bold text-slate-100 md:text-3xl">Tech Stack</h2>
+        <div className="flex items-center gap-3">
+          <TechStackLogo />
+          <h2 className="text-2xl font-bold text-slate-700 md:text-3xl">Tech Stack</h2>
+        </div>
         <p className="mt-6 text-sm text-slate-400">No tech stack data yet.</p>
       </section>
     );
@@ -98,7 +125,10 @@ function StackSectionV2({ stack, techMeta, loading = false }) {
       `}</style>
 
       <section id="stack" data-reveal className="py-20 md:py-28">
-        <h2 className="text-2xl font-bold text-slate-100 md:text-3xl">Tech Stack</h2>
+        <div className="flex items-center gap-3">
+          <TechStackLogo />
+          <h2 className="text-2xl font-bold text-slate-700 md:text-3xl">Tech Stack</h2>
+        </div>
 
         <div className="mt-8 flex flex-col gap-3">
           <CarouselRow items={row1} techMeta={techMeta} duration={40} />
