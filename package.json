@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build_pages": "npm --prefix shared_components run build && npm --prefix main_page run build && npm --prefix ios_project_page run build"
+    "install_pages": "npm --prefix shared_components install --omit=peer && npm --prefix main_page install && npm --prefix ios_project_page install",
+    "build_pages": "npm run install_pages && npm --prefix shared_components run build && npm --prefix main_page run build && npm --prefix ios_project_page run build"
   },
   "keywords": [],
   "author": "",
