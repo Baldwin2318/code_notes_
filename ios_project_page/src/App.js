@@ -66,6 +66,33 @@ function ProjectSkeleton() {
   );
 }
 
+function ScrollArrow({ direction = 'left', onClick }) {
+  const isLeft = direction === 'left';
+
+  return (
+    <button
+      type="button"
+      aria-label={isLeft ? 'Scroll screenshots left' : 'Scroll screenshots right'}
+      className={`absolute top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-700/80 bg-slate-950/80 text-slate-300 shadow-lg shadow-black/30 backdrop-blur transition hover:border-slate-500 hover:text-slate-100 ${
+        isLeft ? 'left-2' : 'right-2'
+      }`}
+      onClick={onClick}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="h-4 w-4"
+      >
+        {isLeft ? <path d="m15 18-6-6 6-6" /> : <path d="m9 18 6-6-6-6" />}
+      </svg>
+    </button>
+  );
+}
+
 function renderInlineMarkdown(text) {
   const nodes = [];
   const pattern = /!\[([^\]]*)\]\(([^)]+)\)|\[([^\]]+)\]\(([^)]+)\)|`([^`]+)`/g;
@@ -247,6 +274,7 @@ function getRepoNameFromPath() {
 
 function App() {
   const repoName = useMemo(() => getRepoNameFromPath(), []);
+  const screenshotsRef = React.useRef(null);
   const [project, setProject] = useState(null);
   const [error, setError] = useState('');
   const [projectLoading, setProjectLoading] = useState(true);
@@ -319,6 +347,13 @@ function App() {
       cancelled = true;
     };
   }, [repoName]);
+
+  function scrollScreenshots(direction) {
+    const container = screenshotsRef.current;
+    if (!container) return;
+    const amount = Math.max(container.clientWidth * 0.82, 260);
+    container.scrollBy({ left: direction === 'left' ? -amount : amount, behavior: 'smooth' });
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
@@ -393,16 +428,20 @@ function App() {
               </div>
 
               {project.screenshots?.length > 0 ? (
-                <div className="flex gap-5 overflow-x-auto pb-4">
-                  {project.screenshots.map((screenshot, index) => (
-                    <img
-                      key={screenshot}
-                      src={screenshot}
-                      alt={`${project.title} screenshot ${index + 1}`}
-                      className="h-[420px] w-auto shrink-0 rounded-[2rem] border border-slate-800 bg-slate-950 object-cover shadow-[0_30px_80px_rgba(2,6,23,0.5)]"
-                      loading="lazy"
-                    />
-                  ))}
+                <div className="relative">
+                  <ScrollArrow direction="left" onClick={() => scrollScreenshots('left')} />
+                  <ScrollArrow direction="right" onClick={() => scrollScreenshots('right')} />
+                  <div ref={screenshotsRef} className="invisible-scrollbar flex gap-5 overflow-x-auto pb-4">
+                    {project.screenshots.map((screenshot, index) => (
+                      <img
+                        key={screenshot}
+                        src={screenshot}
+                        alt={`${project.title} screenshot ${index + 1}`}
+                        className="h-[420px] w-auto shrink-0 rounded-[2rem] border border-slate-800 bg-slate-950 object-cover shadow-[0_30px_80px_rgba(2,6,23,0.5)]"
+                        loading="lazy"
+                      />
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <div className="rounded-[2rem] border border-dashed border-slate-700 bg-slate-950/60 p-8 text-sm text-slate-400">

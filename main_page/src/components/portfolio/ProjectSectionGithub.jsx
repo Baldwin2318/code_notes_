@@ -18,6 +18,33 @@ function GithubLogo() {
   );
 }
 
+function ScrollArrow({ direction = 'left', onClick }) {
+  const isLeft = direction === 'left';
+
+  return (
+    <button
+      type="button"
+      aria-label={isLeft ? 'Scroll left' : 'Scroll right'}
+      className={`absolute top-1/2 z-10 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-700/80 bg-slate-950/80 text-slate-300 shadow-lg shadow-black/30 backdrop-blur transition hover:border-slate-500 hover:text-slate-100 ${
+        isLeft ? 'left-2' : 'right-2'
+      }`}
+      onClick={onClick}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="h-4 w-4"
+      >
+        {isLeft ? <path d="m15 18-6-6 6-6" /> : <path d="m9 18 6-6-6-6" />}
+      </svg>
+    </button>
+  );
+}
+
 function ProjectSectionGithub({ projects = [], loading = false }) {
   const scrollRef = useRef(null);
   const [pendingProject, setPendingProject] = React.useState(null);
@@ -43,6 +70,13 @@ function ProjectSectionGithub({ projects = [], loading = false }) {
     } else if (current >= sectionWidth * 2 - 1) {
       container.scrollLeft = current - sectionWidth;
     }
+  }
+
+  function scrollByAmount(direction) {
+    const container = scrollRef.current;
+    if (!container) return;
+    const amount = Math.max(container.clientWidth * 0.8, 320);
+    container.scrollBy({ left: direction === 'left' ? -amount : amount, behavior: 'smooth' });
   }
 
   if (loading) {
@@ -105,75 +139,79 @@ function ProjectSectionGithub({ projects = [], loading = false }) {
           <h2 className="text-2xl font-bold text-slate-700 md:text-3xl">GitHub Projects</h2>
         </div>
 
-        <div
-          ref={scrollRef}
-          className="relative mt-8 overflow-x-auto overflow-y-hidden"
-          style={{
-            maskImage: 'linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)'
-          }}
-          onScroll={handleScroll}
-        >
+        <div className="relative mt-8">
+          <ScrollArrow direction="left" onClick={() => scrollByAmount('left')} />
+          <ScrollArrow direction="right" onClick={() => scrollByAmount('right')} />
           <div
-            className="flex gap-4"
-            style={{ width: 'max-content' }}
+            ref={scrollRef}
+            className="invisible-scrollbar overflow-x-auto overflow-y-hidden pb-4"
+            style={{
+              maskImage: 'linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)'
+            }}
+            onScroll={handleScroll}
           >
-            {items.map((project, index) => (
-              <article
-                key={`${project.id}-${index}`}
-                className="group w-72 shrink-0 rounded-xl border border-slate-700/80 bg-slate-900/60 p-5 transition hover:-translate-y-1 hover:border-cyan-300/50 cursor-pointer"
-                onClick={() => {
-                  if (project.html_url || project.repo_url) {
-                    setPendingProject(project);
-                  }
-                }}>
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs uppercase tracking-[0.12em] text-slate-500">
-                    {project.year || 'Now'}
-                  </span>
-                  <StatusPill status={project.status || 'active'} />
-                </div>
+            <div
+              className="flex gap-4"
+              style={{ width: 'max-content' }}
+            >
+              {items.map((project, index) => (
+                <article
+                  key={`${project.id}-${index}`}
+                  className="group w-72 shrink-0 rounded-xl border border-slate-700/80 bg-slate-900/60 p-5 transition hover:-translate-y-1 hover:border-cyan-300/50 cursor-pointer"
+                  onClick={() => {
+                    if (project.html_url || project.repo_url) {
+                      setPendingProject(project);
+                    }
+                  }}>
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs uppercase tracking-[0.12em] text-slate-500">
+                      {project.year || 'Now'}
+                    </span>
+                    <StatusPill status={project.status || 'active'} />
+                  </div>
 
-                <h3 className="mt-4 text-lg font-bold text-slate-100 truncate">{project.title}</h3>
-                <p className="mt-3 text-sm leading-6 text-slate-300 line-clamp-3">{project.description}</p>
+                  <h3 className="mt-4 text-lg font-bold text-slate-100 truncate">{project.title}</h3>
+                  <p className="mt-3 text-sm leading-6 text-slate-300 line-clamp-3">{project.description}</p>
 
-                <div className="mt-4">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500">Stack</p>
-                    <div className="flex flex-wrap gap-2">
-                      {(project.stack || []).length > 0 ? (
-                        project.stack.map((item) => (
+                  <div className="mt-4">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500">Stack</p>
+                      <div className="flex flex-wrap gap-2">
+                        {(project.stack || []).length > 0 ? (
+                          project.stack.map((item) => (
+                            <span
+                              key={`${project.id}-stack-${item}-${index}`}
+                              className="rounded-md border border-cyan-400/30 bg-cyan-400/10 px-2 py-1 font-mono text-[11px] text-cyan-200"
+                            >
+                              {item}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-xs text-slate-500">No stack detected</span>
+                        )}
+                      </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500">Frameworks</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {(project.frameworks || []).length > 0 ? (
+                        project.frameworks.slice(0, 8).map((framework) => (
                           <span
-                            key={`${project.id}-stack-${item}-${index}`}
-                            className="rounded-md border border-cyan-400/30 bg-cyan-400/10 px-2 py-1 font-mono text-[11px] text-cyan-200"
+                            key={`${project.id}-framework-${framework}-${index}`}
+                            className="rounded-md border border-slate-600/70 bg-slate-800/70 px-2 py-1 font-mono text-[11px] text-slate-200"
                           >
-                            {item}
+                            {framework}
                           </span>
                         ))
                       ) : (
-                        <span className="text-xs text-slate-500">No stack detected</span>
+                        <span className="text-xs text-slate-500">No frameworks detected</span>
                       )}
                     </div>
-                </div>
-
-                <div className="mt-4">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500">Frameworks</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {(project.frameworks || []).length > 0 ? (
-                      project.frameworks.slice(0, 8).map((framework) => (
-                        <span
-                          key={`${project.id}-framework-${framework}-${index}`}
-                          className="rounded-md border border-slate-600/70 bg-slate-800/70 px-2 py-1 font-mono text-[11px] text-slate-200"
-                        >
-                          {framework}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-xs text-slate-500">No frameworks detected</span>
-                    )}
                   </div>
-                </div>
-              </article>
-            ))}
+                </article>
+              ))}
+            </div>
           </div>
         </div>
       </section>

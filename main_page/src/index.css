@@ -101,3 +101,40 @@ a {
   opacity: 1;
   transform: translateY(0);
 }
+
+.slate-scrollbar {
+  scrollbar-color: rgba(148, 163, 184, 0.55) transparent;
+  scrollbar-width: thin;
+}
+
+.slate-scrollbar::-webkit-scrollbar {
+  height: 10px;
+  background: transparent;
+}
+
+.slate-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.slate-scrollbar::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background: rgba(148, 163, 184, 0.42);
+  background-clip: content-box;
+}
+
+.slate-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.62);
+  background-clip: content-box;
+}
+
+.invisible-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.invisible-scrollbar::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
