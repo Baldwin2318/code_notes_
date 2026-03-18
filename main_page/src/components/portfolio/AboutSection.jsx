@@ -3,8 +3,8 @@ import Skeleton from './Skeleton';
 
 function AboutSection({ bio, loading = false }) {
   return (
-    <section id="about" data-reveal className="py-20 md:py-28">
-      <h2 className="text-2xl font-bold text-slate-100 md:text-3xl">About Me</h2>
+    <section id="about" data-reveal>
+      {/* <h2 className="text-2xl font-bold text-slate-100 md:text-3xl">About Me</h2> */}
       {loading ? (
         <div className="mt-6 space-y-3">
           <Skeleton className="h-4 w-full max-w-4xl rounded-full" />

@@ -6,7 +6,7 @@ function HeroSection({ profile, typedRole, loading = false }) {
     profile.avatar_url || (profile.avatar_base64 ? `data:image/jpeg;base64,${profile.avatar_base64}` : '');
 
   return (
-    <section id="hero" data-reveal className="border-b border-cyan-300/20 pb-20 pt-14 md:pb-28 md:pt-20">
+    <section id="hero" data-reveal className="pb-20 pt-14 md:pb-28 md:pt-20">
       <div className="flex flex-col-reverse gap-8 md:flex-row md:items-start md:justify-between md:gap-12">
         <div className="min-w-0 text-center md:text-left">
           {loading ? (
