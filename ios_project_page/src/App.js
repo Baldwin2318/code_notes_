@@ -2,6 +2,70 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { DevBanner, DevRibbon, Footer } from 'shared_components';
 import SERVER_URL from 'shared_data/react_critical_data.jsx';
 
+function Skeleton({ className = '' }) {
+  return <div className={`skeleton ${className}`.trim()} aria-hidden="true" />;
+}
+
+function ProjectSkeleton() {
+  return (
+    <>
+      <section className="mt-10 overflow-hidden rounded-[2rem] border border-transparent bg-transparent">
+        <div className="grid grid-cols-[96px_1fr] items-start gap-5 px-5 py-8 md:grid-cols-[160px_1fr] md:gap-8 md:px-10 md:py-10">
+          <div className="flex items-start justify-start">
+            <Skeleton className="h-24 w-24 rounded-[1.5rem] md:h-36 md:w-36 md:rounded-[2rem]" />
+          </div>
+
+          <div className="flex flex-col justify-between">
+            <div>
+              <Skeleton className="h-3 w-28 rounded-full" />
+              <Skeleton className="mt-3 h-12 w-full max-w-2xl rounded-[1.25rem] md:h-16" />
+              <div className="mt-4 space-y-3">
+                <Skeleton className="h-4 w-full max-w-3xl rounded-full" />
+                <Skeleton className="h-4 w-11/12 max-w-2xl rounded-full" />
+                <Skeleton className="h-4 w-3/4 max-w-xl rounded-full" />
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Skeleton className="h-9 w-20 rounded-full" />
+              <Skeleton className="h-9 w-32 rounded-full" />
+              <Skeleton className="h-9 w-24 rounded-full" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-8">
+        <div className="mb-4 flex items-center justify-between">
+          <Skeleton className="h-8 w-40 rounded-xl" />
+          <Skeleton className="h-3 w-44 rounded-full" />
+        </div>
+
+        <div className="flex gap-5 overflow-x-auto pb-4">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton
+              key={`screenshot-skeleton-${index}`}
+              className="h-[420px] w-[210px] shrink-0 rounded-[2rem]"
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className="mt-8 rounded-[2rem] border border-transparent bg-transparent p-6 md:p-8">
+        <Skeleton className="h-8 w-36 rounded-xl" />
+        <div className="mt-5 space-y-4">
+          <Skeleton className="h-4 w-full rounded-full" />
+          <Skeleton className="h-4 w-11/12 rounded-full" />
+          <Skeleton className="h-4 w-10/12 rounded-full" />
+          <Skeleton className="h-4 w-full rounded-full" />
+          <Skeleton className="h-4 w-3/4 rounded-full" />
+          <Skeleton className="h-24 w-full rounded-[1.5rem]" />
+        </div>
+      </section>
+    </>
+  );
+}
+
 function renderInlineMarkdown(text) {
   const nodes = [];
   const pattern = /!\[([^\]]*)\]\(([^)]+)\)|\[([^\]]+)\]\(([^)]+)\)|`([^`]+)`/g;
@@ -185,54 +249,75 @@ function App() {
   const repoName = useMemo(() => getRepoNameFromPath(), []);
   const [project, setProject] = useState(null);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [projectLoading, setProjectLoading] = useState(true);
   const [bannerConfig, setBannerConfig] = useState(null);
   const [ribbonConfig, setRibbonConfig] = useState(null);
   const [profile, setProfile] = useState(null);
 
   useEffect(() => {
-    async function loadProject() {
-      if (!repoName) {
-        setError('No iOS repository was selected.');
-        setLoading(false);
-        return;
-      }
+    let cancelled = false;
 
+    async function fetchResource(url, onSuccess, onComplete, onError) {
       try {
-        const [projectResponse, bannerResponse, ribbonResponse, profileResponse] = await Promise.all([
-          fetch(`${SERVER_URL}/api/ios_app/${encodeURIComponent(repoName)}`),
-          fetch(`${SERVER_URL}/api/config/announcement?component=banner`),
-          fetch(`${SERVER_URL}/api/config/announcement?component=ribbon`),
-          fetch(`${SERVER_URL}/api/personal_me/profile`)
-        ]);
+        const response = await fetch(url);
+        const data = await response.json();
 
-        const data = await projectResponse.json();
+        if (cancelled) return;
 
-        if (!projectResponse.ok) {
-          throw new Error(data?.error || 'Unable to load the selected iOS project.');
+        if (!response.ok) {
+          if (onError) onError(data);
+          return;
         }
 
-        setProject(data);
-
-        if (bannerResponse.ok) {
-          setBannerConfig(await bannerResponse.json());
-        }
-
-        if (ribbonResponse.ok) {
-          setRibbonConfig(await ribbonResponse.json());
-        }
-
-        if (profileResponse.ok) {
-          setProfile(await profileResponse.json());
-        }
+        onSuccess(data);
       } catch (fetchError) {
-        setError(fetchError.message);
+        if (!cancelled && onError) {
+          onError(fetchError);
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled && onComplete) {
+          onComplete();
+        }
       }
     }
 
+    function loadProject() {
+      if (!repoName) {
+        setError('No iOS repository was selected.');
+        setProjectLoading(false);
+        return;
+      }
+
+      fetchResource(
+        `${SERVER_URL}/api/ios_app/${encodeURIComponent(repoName)}`,
+        (data) => {
+          setProject(data);
+        },
+        () => setProjectLoading(false),
+        (fetchError) => {
+          const message = fetchError?.error || fetchError?.message || 'Unable to load the selected iOS project.';
+          setError(message);
+        }
+      );
+
+      fetchResource(`${SERVER_URL}/api/config/announcement?component=banner`, (data) => {
+        setBannerConfig(data);
+      });
+
+      fetchResource(`${SERVER_URL}/api/config/announcement?component=ribbon`, (data) => {
+        setRibbonConfig(data);
+      });
+
+      fetchResource(`${SERVER_URL}/api/personal_me/profile`, (data) => {
+        setProfile(data);
+      });
+    }
+
     loadProject();
+
+    return () => {
+      cancelled = true;
+    };
   }, [repoName]);
 
   return (
@@ -247,20 +332,16 @@ function App() {
           &lt; Back to portfolio
         </a>
 
-        {loading && (
-          <section className="mt-10 rounded-[2rem] border border-slate-800 bg-slate-950/70 p-8">
-            <p className="text-sm text-slate-400">Loading selected iOS app...</p>
-          </section>
-        )}
+        {projectLoading && <ProjectSkeleton />}
 
-        {!loading && error && (
+        {!projectLoading && error && (
           <section className="mt-10 rounded-[2rem] border border-rose-400/20 bg-rose-500/10 p-8">
             <h1 className="font-sans text-3xl font-bold text-white">iOS app unavailable</h1>
             <p className="mt-3 text-sm leading-6 text-rose-100">{error}</p>
           </section>
         )}
 
-        {!loading && !error && project && (
+        {!projectLoading && !error && project && (
           <>
             <section className="mt-10 overflow-hidden rounded-[2rem] border border-transparent bg-transparent">
               <div className="grid grid-cols-[96px_1fr] items-start gap-5 px-5 py-8 md:grid-cols-[160px_1fr] md:gap-8 md:px-10 md:py-10">
