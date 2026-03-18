@@ -151,8 +151,8 @@ function App() {
         <HeroSection profile={profile || fallbackProfile} typedRole={typedRole} loading={profileLoading} />
         <AboutSection bio={profile?.bio || ''} loading={profileLoading} />
         <IOSProjects projects={iosProjects} loading={iosProjectsLoading} />
-        <StackSectionV2 stack={profile?.tech_stack || []} techMeta={techMeta} loading={technologiesLoading || profileLoading} />
         <ProjectSectionGithub projects={githubProjects} loading={githubProjectsLoading} />
+        <StackSectionV2 stack={profile?.tech_stack || []} techMeta={techMeta} loading={technologiesLoading || profileLoading} />
         {/* <ContactSection
           email={profile.email || ''}
           github={profile.github || profile.github_url || ''}
