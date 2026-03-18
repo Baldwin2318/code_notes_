@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import StatusPill from './StatusPill';
 import Skeleton from './Skeleton';
 
@@ -19,35 +19,31 @@ function GithubLogo() {
 }
 
 function ProjectSectionGithub({ projects = [], loading = false }) {
-  const trackRef = useRef(null);
-  const animRef = useRef(null);
-  const offsetRef = useRef(0);
-  const pausedRef = useRef(false);
+  const scrollRef = useRef(null);
   const [pendingProject, setPendingProject] = React.useState(null);
-  const SPEED = 0.5;
-
-  const items = [...projects, ...projects];
+  const items = [...projects, ...projects, ...projects];
 
   useEffect(() => {
-    const track = trackRef.current;
-    if (!track || projects.length === 0) return;
+    const container = scrollRef.current;
+    if (!container || projects.length === 0) return;
 
-    function step() {
-      if (!pausedRef.current) {
-        offsetRef.current += SPEED;
-
-        const halfWidth = track.scrollWidth / 2;
-        if (offsetRef.current >= halfWidth) {
-          offsetRef.current = 0;
-        }
-        track.style.transform = `translateX(-${offsetRef.current}px)`;
-      }
-      animRef.current = requestAnimationFrame(step);
-    }
-
-    animRef.current = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(animRef.current);
+    const sectionWidth = container.scrollWidth / 3;
+    container.scrollLeft = sectionWidth;
   }, [projects]);
+
+  function handleScroll() {
+    const container = scrollRef.current;
+    if (!container || projects.length === 0) return;
+
+    const sectionWidth = container.scrollWidth / 3;
+    const current = container.scrollLeft;
+
+    if (current <= 1) {
+      container.scrollLeft = current + sectionWidth;
+    } else if (current >= sectionWidth * 2 - 1) {
+      container.scrollLeft = current - sectionWidth;
+    }
+  }
 
   if (loading) {
     return (
@@ -110,17 +106,16 @@ function ProjectSectionGithub({ projects = [], loading = false }) {
         </div>
 
         <div
-          className="relative mt-8 overflow-hidden"
+          ref={scrollRef}
+          className="relative mt-8 overflow-x-auto overflow-y-hidden"
           style={{
             maskImage: 'linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)',
             WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%)'
           }}
-          onMouseEnter={() => { pausedRef.current = true; }}
-          onMouseLeave={() => { pausedRef.current = false; }}
+          onScroll={handleScroll}
         >
           <div
-            ref={trackRef}
-            className="flex gap-4 will-change-transform"
+            className="flex gap-4"
             style={{ width: 'max-content' }}
           >
             {items.map((project, index) => (
@@ -184,7 +179,7 @@ function ProjectSectionGithub({ projects = [], loading = false }) {
       </section>
 
       {pendingProject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-6" onClick={() => setPendingProject(null)}>
           <div className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-950 p-6 shadow-2xl shadow-black/40">
             <h3 className="font-sans text-xl font-bold text-slate-100">Open GitHub repository?</h3>
             <p className="mt-3 text-sm leading-6 text-slate-300">
