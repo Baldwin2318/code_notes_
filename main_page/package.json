@@ -3,8 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "animejs": "^4.3.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-icons": "^5.6.0",
     "react-scripts": "5.0.1",
     "shared_components": "file:../shared_components",
     "shared_data": "file:../shared_data"

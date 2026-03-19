@@ -13,7 +13,7 @@ function HeroSection({ profile, typedRole, loading = false }) {
             <>
               <Skeleton className="mt-5 h-6 w-40 rounded-full md:h-7" />
               <Skeleton className="mt-5 h-14 w-full max-w-3xl rounded-2xl md:h-20" />
-              <Skeleton className="mt-4 h-5 w-64 rounded-full" />
+              {/* <Skeleton className="mt-4 h-5 w-64 rounded-full" /> */}
             </>
           ) : (
             <>
@@ -21,14 +21,14 @@ function HeroSection({ profile, typedRole, loading = false }) {
                 {profile.full_name || 'Portfolio'}
               </h1>
               {profile.location && (
-                <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-300 md:text-base">
+                <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-400 md:text-base">
                   Based in {profile.location} 🇨🇦
                 </p>
               )}
-              <p className="mt-5 font-mono text-sm text-cyan-300 md:text-base">
+              {/* <p className="mt-5 font-mono text-sm text-cyan-300 md:text-base">
                 {typedRole || profile.role_title || ''}
                 {(typedRole || profile.role_title) && <span className="typing-cursor" />}
-              </p>
+              </p> */}
             </>
           )}
         </div>

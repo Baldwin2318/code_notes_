@@ -54,11 +54,22 @@ function findAppIcon(tree) {
 }
 
 const CHAT_FALLBACK = 'I only answer questions about this portfolio.';
+const CHAT_QUOTA_MESSAGE = 'Baldwin exceeded his Gemini quota for today. The chatbot is powered by Gemini, so please try again later.';
 
 function compactText(value, maxLength = 500) {
   const text = String(value || '').replace(/\s+/g, ' ').trim();
   if (text.length <= maxLength) return text;
   return `${text.slice(0, maxLength - 1)}...`;
+}
+
+function isGeminiQuotaExceeded(error) {
+  const message = String(error?.message || '').toLowerCase();
+  return (
+    message.includes('quota exceeded') ||
+    message.includes('rate-limits') ||
+    message.includes('generate_content_free_tier_requests') ||
+    message.includes('resource_exhausted')
+  );
 }
 
 function baldwin_web_router1(app) {
@@ -277,9 +288,10 @@ function baldwin_web_router1(app) {
   });
 
   const owner = 'Baldwin2318';
+  const githubToken = process.env.GITHUB_TOKEN || critical_data.GITHUB_TOKEN || '';
   const githubHeaders = {
     Accept: 'application/vnd.github+json',
-    Authorization: `Bearer ${process.env.GITHUB_TOKEN}`
+    ...(githubToken ? { Authorization: `Bearer ${githubToken}` } : {})
   };
 
   const configFiles = {
@@ -318,6 +330,147 @@ function baldwin_web_router1(app) {
       throw new Error(`GitHub API request failed (${response.status}) for ${url}`);
     }
     return response.json();
+  };
+
+  const fetchGithubProfile = async () => {
+    const publicProfile = await fetchGithubJson(`https://api.github.com/users/${owner}`);
+    let totalRepositories = publicProfile?.public_repos || 0;
+    let privateRepositories = 0;
+
+    try {
+      const authenticatedProfile = await fetchGithubJson('https://api.github.com/user');
+      if (authenticatedProfile?.login?.toLowerCase() === owner.toLowerCase()) {
+        privateRepositories = authenticatedProfile.owned_private_repos || 0;
+        totalRepositories = (authenticatedProfile.public_repos || 0) + privateRepositories;
+      }
+    } catch (profileErr) {
+      privateRepositories = 0;
+      totalRepositories = publicProfile?.public_repos || 0;
+    }
+
+    return {
+      username: publicProfile?.login || owner,
+      name: publicProfile?.name || '',
+      bio: publicProfile?.bio || '',
+      location: publicProfile?.location || '',
+      company: publicProfile?.company || '',
+      blog: publicProfile?.blog || '',
+      profile_url: publicProfile?.html_url || '',
+      avatar_url: publicProfile?.avatar_url || '',
+      followers: publicProfile?.followers || 0,
+      following: publicProfile?.following || 0,
+      public_repositories: publicProfile?.public_repos || 0,
+      private_repositories: privateRepositories,
+      total_repositories: totalRepositories,
+      public_gists: publicProfile?.public_gists || 0,
+      account_created_at: publicProfile?.created_at || null,
+      account_updated_at: publicProfile?.updated_at || null
+    };
+  };
+
+  const fetchGithubGraphql = async (query, variables = {}) => {
+    const response = await fetch('https://api.github.com/graphql', {
+      method: 'POST',
+      headers: {
+        ...githubHeaders,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ query, variables })
+    });
+
+    const payload = await response.json();
+
+    if (!response.ok) {
+      throw new Error(payload?.message || `GitHub GraphQL request failed (${response.status})`);
+    }
+
+    if (Array.isArray(payload?.errors) && payload.errors.length > 0) {
+      throw new Error(payload.errors[0]?.message || 'GitHub GraphQL request failed.');
+    }
+
+    return payload.data;
+  };
+
+  let githubCommitTotalCache = { expiresAt: 0, value: null };
+
+  const fetchGithubCommitTotal = async () => {
+    if (!githubToken) {
+      throw new Error('GITHUB_TOKEN is missing. Add it to the server environment to fetch GitHub commit totals.');
+    }
+
+    if (githubCommitTotalCache.value && githubCommitTotalCache.expiresAt > Date.now()) {
+      return githubCommitTotalCache.value;
+    }
+
+    const createdAtQuery = `
+      query GetGithubUserCreatedAt($login: String!) {
+        user(login: $login) {
+          createdAt
+          login
+        }
+      }
+    `;
+
+    const userData = await fetchGithubGraphql(createdAtQuery, { login: owner });
+    const githubUser = userData?.user;
+
+    if (!githubUser?.createdAt) {
+      throw new Error(`Unable to load GitHub user metadata for ${owner}.`);
+    }
+
+    const now = new Date();
+    const startYear = new Date(githubUser.createdAt).getUTCFullYear();
+    const endYear = now.getUTCFullYear();
+    const githubProfile = await fetchGithubProfile();
+
+    const yearRanges = Array.from({ length: endYear - startYear + 1 }, (_, index) => {
+      const year = startYear + index;
+      return {
+        year,
+        from: `${year}-01-01T00:00:00Z`,
+        to: year === endYear ? now.toISOString() : `${year + 1}-01-01T00:00:00Z`
+      };
+    });
+
+    const contributionQuery = `
+      query GetGithubCommitContributions($login: String!, $from: DateTime!, $to: DateTime!) {
+        user(login: $login) {
+          contributionsCollection(from: $from, to: $to) {
+            totalCommitContributions
+          }
+        }
+      }
+    `;
+
+    const yearlyTotals = await Promise.all(
+      yearRanges.map(async ({ year, from, to }) => {
+        const data = await fetchGithubGraphql(contributionQuery, {
+          login: owner,
+          from,
+          to
+        });
+
+        return {
+          year,
+          total: data?.user?.contributionsCollection?.totalCommitContributions || 0
+        };
+      })
+    );
+
+    const payload = {
+      username: githubUser.login,
+      total_commits: yearlyTotals.reduce((sum, entry) => sum + entry.total, 0),
+      total_repositories: githubProfile.total_repositories || 0,
+      as_of: now.toISOString(),
+      yearly_totals: yearlyTotals
+    };
+
+    githubCommitTotalCache = {
+      value: payload,
+      expiresAt: Date.now() + 30 * 60 * 1000
+    };
+
+    return payload;
   };
 
   const fetchRepoTree = async (repoName) => {
@@ -477,8 +630,10 @@ function baldwin_web_router1(app) {
       return portfolioChatCache.value;
     }
 
-    const [projects, client] = await Promise.all([
+    const [projects, githubProfile, githubCommitTotals, client] = await Promise.all([
       fetchGithubProjects(),
+      fetchGithubProfile(),
+      fetchGithubCommitTotal(),
       getDbClient()
     ]);
 
@@ -525,6 +680,28 @@ function baldwin_web_router1(app) {
           github: profile.github || '',
           linkedin: profile.linkedin || '',
           email: profile.email || ''
+        },
+        github_profile: {
+          username: githubProfile.username || owner,
+          name: githubProfile.name || '',
+          bio: compactText(githubProfile.bio || '', 500),
+          location: githubProfile.location || '',
+          company: githubProfile.company || '',
+          blog: githubProfile.blog || '',
+          profile_url: githubProfile.profile_url || '',
+          followers: githubProfile.followers || 0,
+          following: githubProfile.following || 0,
+          public_repositories: githubProfile.public_repositories || 0,
+          private_repositories: githubProfile.private_repositories || 0,
+          total_repositories: githubProfile.total_repositories || 0,
+          public_gists: githubProfile.public_gists || 0,
+          account_created_at: githubProfile.account_created_at || null,
+          account_updated_at: githubProfile.account_updated_at || null
+        },
+        github_totals: {
+          total_commits: githubCommitTotals.total_commits || 0,
+          total_repositories: githubCommitTotals.total_repositories || 0,
+          as_of: githubCommitTotals.as_of || null
         },
         technologies: technologies.slice(0, 40).map((item) => ({
           name: item.name,
@@ -584,10 +761,11 @@ function baldwin_web_router1(app) {
                 {
                   text: [
                     "You are a portfolio assistant for Baldwin's personal website.",
-                    'Answer only using the provided portfolio data.',
+                    'Answer only using the provided portfolio data and GitHub account data.',
                     `If the answer is not supported by the provided data, reply exactly with: ${CHAT_FALLBACK}`,
+                    'You may answer questions about Baldwin, his portfolio, his GitHub profile, his GitHub repositories, and GitHub activity totals when those details are present in the provided data.',
                     'Do not use outside knowledge.',
-                    'Do not guess, infer missing facts, or invent projects, dates, skills, or employers.',
+                    'Do not guess, infer missing facts, or invent projects, dates, skills, employers, or GitHub stats that are not present in the provided data.',
                     'Keep responses concise and practical.'
                   ].join(' ')
                 }
@@ -649,6 +827,15 @@ function baldwin_web_router1(app) {
     }
   });
 
+  app.get('/api/personal_me/github/commit-total', async (req, res) => {
+    try {
+      const commitTotal = await fetchGithubCommitTotal();
+      res.json(commitTotal);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.post('/api/chat/portfolio', async (req, res) => {
     try {
       const message = String(req.body?.message || '').trim();
@@ -661,6 +848,9 @@ function baldwin_web_router1(app) {
       const answer = await askGeminiAboutPortfolio(message, context);
       return res.json({ answer });
     } catch (err) {
+      if (isGeminiQuotaExceeded(err)) {
+        return res.status(429).json({ error: CHAT_QUOTA_MESSAGE });
+      }
       return res.status(500).json({ error: err.message || 'Unable to answer right now.' });
     }
   });

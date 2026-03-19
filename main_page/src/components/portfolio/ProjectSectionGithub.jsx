@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
+import { animate } from 'animejs';
 import StatusPill from './StatusPill';
 import Skeleton from './Skeleton';
+import GithubCommitCounter from './GithubCommitCounter';
 
 function GithubLogo() {
   return (
@@ -45,8 +47,10 @@ function ScrollArrow({ direction = 'left', onClick }) {
   );
 }
 
-function ProjectSectionGithub({ projects = [], loading = false }) {
+function ProjectSectionGithub({ projects = [], loading = false, commitCounterApiUrl = '' }) {
+  const sectionRef = useRef(null);
   const scrollRef = useRef(null);
+  const hasAnimatedStacksRef = useRef(false);
   const [pendingProject, setPendingProject] = React.useState(null);
   const items = [...projects, ...projects, ...projects];
 
@@ -57,6 +61,41 @@ function ProjectSectionGithub({ projects = [], loading = false }) {
     const sectionWidth = container.scrollWidth / 3;
     container.scrollLeft = sectionWidth;
   }, [projects]);
+
+  useEffect(() => {
+    const sectionNode = sectionRef.current;
+
+    if (!sectionNode || loading || projects.length === 0 || hasAnimatedStacksRef.current) {
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting || hasAnimatedStacksRef.current) return;
+
+          const projectCards = sectionNode.querySelectorAll('[data-project-card]');
+          hasAnimatedStacksRef.current = true;
+
+          animate(projectCards, {
+            translateY: [28, 0],
+            opacity: [0, 1],
+            scale: [0.98, 1],
+            duration: 700,
+            ease: 'outElastic(1, .7)',
+            delay: (_, index) => 120 + index * 45
+          });
+
+          observer.disconnect();
+        });
+      },
+      { threshold: 0.2 }
+    );
+
+    observer.observe(sectionNode);
+
+    return () => observer.disconnect();
+  }, [loading, projects]);
 
   function handleScroll() {
     const container = scrollRef.current;
@@ -115,6 +154,9 @@ function ProjectSectionGithub({ projects = [], loading = false }) {
             </article>
           ))}
         </div>
+        <div className="mt-10 flex justify-center">
+          <GithubCommitCounter apiUrl={commitCounterApiUrl} />
+        </div>
       </section>
     );
   }
@@ -127,19 +169,25 @@ function ProjectSectionGithub({ projects = [], loading = false }) {
           <h2 className="text-2xl font-bold text-slate-700 md:text-3xl">GitHub Projects</h2>
         </div>
         <p className="mt-6 text-sm text-slate-400">No GitHub projects yet.</p>
+        <div className="mt-10 flex justify-center">
+          <GithubCommitCounter apiUrl={commitCounterApiUrl} />
+        </div>
       </section>
     );
   }
 
   return (
     <>
-      <section id="github-projects" data-reveal className="py-20 md:py-28">
+      <section ref={sectionRef} id="github-projects" data-reveal className="py-20 md:py-28">
         <div className="flex items-center gap-3">
           <GithubLogo />
           <h2 className="text-2xl font-bold text-slate-700 md:text-3xl">GitHub Projects</h2>
         </div>
 
-        <div className="relative mt-8">
+        <GithubCommitCounter apiUrl={commitCounterApiUrl} />
+
+
+        <div className="relative">
           <ScrollArrow direction="left" onClick={() => scrollByAmount('left')} />
           <ScrollArrow direction="right" onClick={() => scrollByAmount('right')} />
           <div
@@ -159,6 +207,8 @@ function ProjectSectionGithub({ projects = [], loading = false }) {
                 <article
                   key={`${project.id}-${index}`}
                   className="group w-72 shrink-0 rounded-xl border border-slate-700/80 bg-slate-900/60 p-5 transition hover:-translate-y-1 hover:border-cyan-300/50 cursor-pointer"
+                  data-project-card
+                  style={{ opacity: 0, transform: 'translateY(28px)' }}
                   onClick={() => {
                     if (project.html_url || project.repo_url) {
                       setPendingProject(project);

@@ -150,8 +150,12 @@ function App() {
       <main className="relative mx-auto w-full max-w-6xl px-6 md:px-10">
         <HeroSection profile={profile || fallbackProfile} typedRole={typedRole} loading={profileLoading} />
         <AboutSection bio={profile?.bio || ''} loading={profileLoading} />
-        <IOSProjects projects={iosProjects} loading={iosProjectsLoading} />
-        <ProjectSectionGithub projects={githubProjects} loading={githubProjectsLoading} />
+        {/* <IOSProjects projects={iosProjects} loading={iosProjectsLoading} /> */}
+        <ProjectSectionGithub
+          projects={githubProjects}
+          loading={githubProjectsLoading}
+          commitCounterApiUrl={`${SERVER_URL}/api/personal_me/github/commit-total`}
+        />
         <StackSectionV2 stack={profile?.tech_stack || []} techMeta={techMeta} loading={technologiesLoading || profileLoading} />
         {/* <ContactSection
           email={profile.email || ''}

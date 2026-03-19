@@ -1,4 +1,8 @@
 import React from 'react';
+import gitInfo from 'react-git-info/macro';
+
+const git = gitInfo();
+const footerVersion = git?.tags?.[0];
 
 function IconWrapper({ children }) {
   return (
@@ -65,7 +69,7 @@ function Footer({
         </div>
 
         <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-slate-400">
-          {credit}
+          {credit} {footerVersion}
         </p>
       </div>
     </footer>

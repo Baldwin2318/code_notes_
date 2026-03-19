@@ -1,5 +1,18 @@
 import React from 'react';
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+const git = function () {
+  return {
+    "branch": "dev",
+    "tags": [],
+    "commit": {
+      "shortHash": "fd66961",
+      "hash": "fd66961f7fe046737684f53c4b4534e767b9e607",
+      "date": "2026-03-18T20:07:21-04:00",
+      "message": "main_page/*/PongSection.jsx: Add simpel games"
+    }
+  };
+}();
+const footerVersion = git?.tags?.[0];
 function IconWrapper({
   children
 }) {
@@ -78,6 +91,9 @@ function Footer({
       }), /*#__PURE__*/_jsx("p", {
         className: "font-mono text-[11px] uppercase tracking-[0.24em] text-slate-400",
         children: credit
+      }), /*#__PURE__*/_jsx("p", {
+        className: "font-mono text-[11px] uppercase tracking-[0.24em] text-slate-500",
+        children: footerVersion
       })]
     })
   });
