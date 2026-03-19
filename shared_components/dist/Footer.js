@@ -3,12 +3,12 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 const git = function () {
   return {
     "branch": "dev",
-    "tags": [],
+    "tags": ["v1.0.0"],
     "commit": {
-      "shortHash": "fd66961",
-      "hash": "fd66961f7fe046737684f53c4b4534e767b9e607",
-      "date": "2026-03-18T20:07:21-04:00",
-      "message": "main_page/*/PongSection.jsx: Add simpel games"
+      "shortHash": "baec974",
+      "hash": "baec974b34e60b830f83e1b20d4390f4b9a1a69c",
+      "date": "2026-03-19T00:08:46-04:00",
+      "message": "Web: First version of web app officially"
     }
   };
 }();
@@ -88,12 +88,9 @@ function Footer({
             children: item.icon
           })
         }, item.label))
-      }), /*#__PURE__*/_jsx("p", {
+      }), /*#__PURE__*/_jsxs("p", {
         className: "font-mono text-[11px] uppercase tracking-[0.24em] text-slate-400",
-        children: credit
-      }), /*#__PURE__*/_jsx("p", {
-        className: "font-mono text-[11px] uppercase tracking-[0.24em] text-slate-500",
-        children: footerVersion
+        children: [credit, " ", footerVersion]
       })]
     })
   });
