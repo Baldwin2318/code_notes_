@@ -150,7 +150,7 @@ function App() {
       <main className="relative mx-auto w-full max-w-6xl px-6 md:px-10">
         <HeroSection profile={profile || fallbackProfile} typedRole={typedRole} loading={profileLoading} />
         <AboutSection bio={profile?.bio || ''} loading={profileLoading} />
-        {/* <IOSProjects projects={iosProjects} loading={iosProjectsLoading} /> */}
+        <IOSProjects projects={iosProjects} loading={iosProjectsLoading} />
         <ProjectSectionGithub
           projects={githubProjects}
           loading={githubProjectsLoading}
