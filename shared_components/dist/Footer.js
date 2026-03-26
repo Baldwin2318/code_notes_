@@ -2,13 +2,13 @@ import React from 'react';
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 const git = function () {
   return {
-    "branch": "dev",
-    "tags": ["v1.0.0"],
+    "branch": "main",
+    "tags": ["v1.0.2"],
     "commit": {
-      "shortHash": "baec974",
-      "hash": "baec974b34e60b830f83e1b20d4390f4b9a1a69c",
-      "date": "2026-03-19T00:08:46-04:00",
-      "message": "Web: First version of web app officially"
+      "shortHash": "6edc2f4",
+      "hash": "6edc2f424ba3b9be299950f1c2e58ab6ddbf12b7",
+      "date": "2026-03-25T00:38:36-04:00",
+      "message": "main_page/src/App.js: Show ios project section"
     }
   };
 }();
