@@ -276,6 +276,7 @@ function App() {
   const repoName = useMemo(() => getRepoNameFromPath(), []);
   const screenshotsRef = React.useRef(null);
   const [project, setProject] = useState(null);
+  const [activeDescriptionTab, setActiveDescriptionTab] = useState('readme');
   const [error, setError] = useState('');
   const [projectLoading, setProjectLoading] = useState(true);
   const [bannerConfig, setBannerConfig] = useState(null);
@@ -320,6 +321,7 @@ function App() {
         `${SERVER_URL}/api/ios_app/${encodeURIComponent(repoName)}`,
         (data) => {
           setProject(data);
+          setActiveDescriptionTab(data?.about_markdown ? 'about' : 'readme');
         },
         () => setProjectLoading(false),
         (fetchError) => {
@@ -354,6 +356,10 @@ function App() {
     const amount = Math.max(container.clientWidth * 0.82, 260);
     container.scrollBy({ left: direction === 'left' ? -amount : amount, behavior: 'smooth' });
   }
+
+  const activeMarkdown = activeDescriptionTab === 'about'
+    ? project?.about_markdown
+    : project?.readme_markdown;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
@@ -451,10 +457,37 @@ function App() {
             </section>
 
             <section className="mt-8 rounded-[2rem] border border-slate-800 p-6 md:p-8 border-transparent bg-transparent">
-              <h2 className="font-sans text-2xl font-bold text-white">Description</h2>
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                {/* <h2 className="font-sans text-2xl font-bold text-white">Description</h2> */}
+                <div className="inline-flex w-fit rounded-full border border-slate-800 bg-slate-950/60 p-1">
+                  <button
+                    type="button"
+                    onClick={() => setActiveDescriptionTab('about')}
+                    disabled={!project.about_markdown}
+                    className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition ${
+                      activeDescriptionTab === 'about'
+                        ? 'bg-cyan-300 text-slate-950'
+                        : 'text-slate-400 hover:text-slate-200 disabled:cursor-not-allowed disabled:text-slate-600'
+                    }`}
+                  >
+                    About
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveDescriptionTab('readme')}
+                    disabled={!project.readme_markdown}
+                    className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition ${
+                      activeDescriptionTab === 'readme'
+                        ? 'bg-cyan-300 text-slate-950'
+                        : 'text-slate-400 hover:text-slate-200 disabled:cursor-not-allowed disabled:text-slate-600'
+                    }`}
+                  >
+                    README
+                  </button>
+                </div>
+              </div>
               <div className="mt-5 space-y-4">
-                {/* <p>{project.description}</p> */}
-                <MarkdownErrorBoundary markdown={project.readme_markdown} />
+                <MarkdownErrorBoundary markdown={activeMarkdown} />
               </div>
             </section>
 
