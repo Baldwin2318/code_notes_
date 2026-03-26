@@ -73,10 +73,8 @@ async function fetchRepoTree(repoName) {
   }
 }
 
-async function fetchReadmeMarkdown(repoName, branch) {
-  const readmeCandidates = ['README.md', 'README.MD', 'readme.md'];
-
-  for (const candidate of readmeCandidates) {
+async function fetchMarkdownFile(repoName, branch, candidates) {
+  for (const candidate of candidates) {
     try {
       const encodedPath = candidate
         .split('/')
@@ -112,13 +110,15 @@ async function fetchIOSRepoDetails(repoName) {
 
   const appIconPath = findAppIcon(treeItems);
   const screenshotPaths = findScreenshots(treeItems);
-  const readmeMarkdown = await fetchReadmeMarkdown(repoName, branch);
+  const readmeMarkdown = await fetchMarkdownFile(repoName, branch, ['README.md', 'README.MD', 'readme.md']);
+  const aboutMarkdown = await fetchMarkdownFile(repoName, branch, ['About.md', 'About.MD', 'ABOUT.md', 'about.md']);
 
   return {
     id: repo.id,
     repo_name: repo.name,
     title: repo.name,
     description: repo.description || 'No repository description available.',
+    about_markdown: aboutMarkdown,
     readme_markdown: readmeMarkdown,
     repo_url: repo.html_url,
     project_url: repo.homepage || '',
