@@ -53,6 +53,32 @@ function findAppIcon(tree) {
   return iconFile || null;
 }
 
+function findWebAppMarker(tree) {
+  const paths = tree.map((item) => item.path || '');
+  return paths.find((itemPath) => {
+    const normalized = itemPath.toLowerCase();
+    return normalized === 'is_web_app.md' || normalized === 'is_web_app';
+  }) || null;
+}
+
+function findWebAppScreenshot(tree) {
+  const paths = tree.map((item) => item.path || '');
+  return paths.find((itemPath) => itemPath.toLowerCase() === 'screenshots/sc1.png') || null;
+}
+
+function extractFirstUrlFromMarkdown(markdown) {
+  const text = String(markdown || '').trim();
+  if (!text) return '';
+
+  const markdownLinkMatch = text.match(/\[[^\]]+\]\((https?:\/\/[^)\s]+)\)/i);
+  if (markdownLinkMatch?.[1]) {
+    return markdownLinkMatch[1].trim();
+  }
+
+  const plainUrlMatch = text.match(/https?:\/\/[^\s)]+/i);
+  return plainUrlMatch ? plainUrlMatch[0].trim() : '';
+}
+
 const CHAT_FALLBACK = 'I only answer questions about this portfolio.';
 const CHAT_QUOTA_MESSAGE = 'Baldwin exceeded his Gemini quota for today. The chatbot is powered by Gemini, so please try again later.';
 
@@ -320,8 +346,11 @@ function baldwin_web_router1(app) {
     stack: [],
     frameworks: [],
     app_icon_url: null,
+    screenshot_url: null,
+    is_web_app: false,
     is_ios_app: false,
-    indicators: null
+    indicators: null,
+    website_url: ''
   });
 
   const fetchGithubJson = async (url) => {
@@ -496,6 +525,8 @@ function baldwin_web_router1(app) {
       const stackSet = new Set();
       let packageJsonPath = null;
       let hasSwiftFile = false;
+      const webAppMarkerPath = findWebAppMarker(treeItems);
+      const webAppScreenshotPath = findWebAppScreenshot(treeItems);
 
       treeItems.forEach((item) => {
         const itemPath = item?.path || '';
@@ -520,6 +551,7 @@ function baldwin_web_router1(app) {
 
       const iosDetection = detectiOSApp(treeItems);
       const appIconPath = findAppIcon(treeItems);
+      let websiteUrl = '';
 
       if (iosDetection.isiOS) {
         stackSet.add('Swift/iOS');
@@ -581,17 +613,44 @@ function baldwin_web_router1(app) {
         frameworks = Array.from(importSet);
       }
 
+      if (webAppMarkerPath) {
+        const encodedWebAppMarkerPath = webAppMarkerPath
+          .split('/')
+          .map((segment) => encodeURIComponent(segment))
+          .join('/');
+
+        try {
+          const webAppMarkerData = await fetchGithubJson(
+            `https://api.github.com/repos/${owner}/${repo.name}/contents/${encodedWebAppMarkerPath}?ref=${branch}`
+          );
+
+          if (webAppMarkerData?.content) {
+            const decodedMarker = Buffer.from(webAppMarkerData.content, 'base64').toString('utf8');
+            websiteUrl = extractFirstUrlFromMarkdown(decodedMarker);
+          }
+        } catch (webAppMarkerErr) {
+          websiteUrl = '';
+        }
+      }
+
       const appIconUrl = appIconPath
         ? `https://raw.githubusercontent.com/${owner}/${repo.name}/${branch}/${appIconPath}`
         : null;
+      const screenshotUrl = webAppScreenshotPath
+        ? `https://raw.githubusercontent.com/${owner}/${repo.name}/${branch}/${webAppScreenshotPath}`
+        : null;
+      const isWebApp = Boolean(webAppMarkerPath && screenshotUrl && websiteUrl);
 
       return {
         ...baseProject,
         stack: Array.from(stackSet),
         frameworks,
         app_icon_url: appIconUrl,
+        screenshot_url: screenshotUrl,
+        is_web_app: isWebApp,
         is_ios_app: iosDetection.isiOS,
-        indicators: iosDetection.indicators
+        indicators: iosDetection.indicators,
+        website_url: websiteUrl
       };
     } catch (repoErr) {
       return baseProject;
@@ -822,6 +881,16 @@ function baldwin_web_router1(app) {
       const projects = await fetchGithubProjects();
       const iosProjects = projects.filter((project) => project.is_ios_app);
       res.json(iosProjects);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get('/api/personal_me/github/projects/web', async (req, res) => {
+    try {
+      const projects = await fetchGithubProjects();
+      const webApps = projects.filter((project) => project.is_web_app);
+      res.json(webApps);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

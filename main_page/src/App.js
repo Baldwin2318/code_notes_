@@ -6,6 +6,7 @@ import AboutSection from './components/portfolio/AboutSection';
 import StackSectionV2 from './components/portfolio/StackSectionV2';
 import ProjectSectionGithub from './components/portfolio/ProjectSectionGithub';
 import IOSProjects from './components/portfolio/iosProjects';
+import WebAppsSection from './components/portfolio/WebAppsSection';
 import { fallbackProfile } from './components/portfolio/constants';
 import useTyping from './hooks/useTyping';
 
@@ -17,10 +18,12 @@ function App() {
   const [technologies, setTechnologies] = useState([]);
   const [githubProjects, setGithubProjects] = useState([]);
   const [iosProjects, setIosProjects] = useState([]);
+  const [webApps, setWebApps] = useState([]);
   const [profileLoading, setProfileLoading] = useState(true);
   const [technologiesLoading, setTechnologiesLoading] = useState(true);
   const [githubProjectsLoading, setGithubProjectsLoading] = useState(true);
   const [iosProjectsLoading, setIosProjectsLoading] = useState(true);
+  const [webAppsLoading, setWebAppsLoading] = useState(true);
 
   const typedRole = useTyping(profile?.role_title ? [profile.role_title] : [], 75, 1800);
 
@@ -102,6 +105,16 @@ function App() {
       () => setIosProjectsLoading(false)
     );
 
+    fetchResource(
+      `${SERVER_URL}/api/personal_me/github/projects/web`,
+      (webAppsData) => {
+        if (Array.isArray(webAppsData)) {
+          setWebApps(webAppsData);
+        }
+      },
+      () => setWebAppsLoading(false)
+    );
+
     return () => {
       cancelled = true;
     };
@@ -151,6 +164,7 @@ function App() {
         <HeroSection profile={profile || fallbackProfile} typedRole={typedRole} loading={profileLoading} />
         <AboutSection bio={profile?.bio || ''} loading={profileLoading} />
         <IOSProjects projects={iosProjects} loading={iosProjectsLoading} />
+        <WebAppsSection projects={webApps} loading={webAppsLoading} />
         <ProjectSectionGithub
           projects={githubProjects}
           loading={githubProjectsLoading}
