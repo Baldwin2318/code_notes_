@@ -2,13 +2,13 @@ import React from 'react';
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 const git = function () {
   return {
-    "branch": "main",
-    "tags": ["v1.0.2"],
+    "branch": "dev",
+    "tags": ["v1.2.0"],
     "commit": {
-      "shortHash": "6edc2f4",
-      "hash": "6edc2f424ba3b9be299950f1c2e58ab6ddbf12b7",
-      "date": "2026-03-25T00:38:36-04:00",
-      "message": "main_page/src/App.js: Show ios project section"
+      "shortHash": "266d2ba",
+      "hash": "266d2ba5c63e224b3d4748fe68b2cf3c4325241a",
+      "date": "2026-03-29T01:29:19-04:00",
+      "message": "server/*: Add a server for mtl_map_crime web app. Solve preloading latency for that project."
     }
   };
 }();
