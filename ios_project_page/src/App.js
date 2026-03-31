@@ -423,6 +423,15 @@ function App() {
                         View Repo
                       </a>
                     ) : null}
+                     <a
+                      href="https://testflight.apple.com/join/B3HBMAKP"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex flex-col items-center rounded-full border border-cyan-300/35 px-3 py-2 text-cyan-300 transition hover:border-cyan-300/70 hover:bg-cyan-300/10"
+                    >
+                      <span>Install</span>
+                      <span className="text-xs text-cyan-300/50">via TestFlight</span>
+                    </a>
                   </div>
                 </div>
               </div>
