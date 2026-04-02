@@ -7,6 +7,7 @@ import StackSectionV2 from './components/portfolio/StackSectionV2';
 import ProjectSectionGithub from './components/portfolio/ProjectSectionGithub';
 import IOSProjects from './components/portfolio/iosProjects';
 import WebAppsSection from './components/portfolio/WebAppsSection';
+import OtherProjectsSection from './components/portfolio/OtherProjectsSection';
 import { fallbackProfile } from './components/portfolio/constants';
 import useTyping from './hooks/useTyping';
 
@@ -19,11 +20,13 @@ function App() {
   const [githubProjects, setGithubProjects] = useState([]);
   const [iosProjects, setIosProjects] = useState([]);
   const [webApps, setWebApps] = useState([]);
+  const [otherProjects, setOtherProjects] = useState([]);
   const [profileLoading, setProfileLoading] = useState(true);
   const [technologiesLoading, setTechnologiesLoading] = useState(true);
   const [githubProjectsLoading, setGithubProjectsLoading] = useState(true);
   const [iosProjectsLoading, setIosProjectsLoading] = useState(true);
   const [webAppsLoading, setWebAppsLoading] = useState(true);
+  const [otherProjectsLoading, setOtherProjectsLoading] = useState(true);
 
   const typedRole = useTyping(profile?.role_title ? [profile.role_title] : [], 75, 1800);
 
@@ -115,6 +118,16 @@ function App() {
       () => setWebAppsLoading(false)
     );
 
+    fetchResource(
+      `${SERVER_URL}/api/personal_me/github/projects/other`,
+      (otherProjectsData) => {
+        if (Array.isArray(otherProjectsData)) {
+          setOtherProjects(otherProjectsData);
+        }
+      },
+      () => setOtherProjectsLoading(false)
+    );
+
     return () => {
       cancelled = true;
     };
@@ -165,6 +178,7 @@ function App() {
         <AboutSection bio={profile?.bio || ''} loading={profileLoading} />
         <IOSProjects projects={iosProjects} loading={iosProjectsLoading} />
         <WebAppsSection projects={webApps} loading={webAppsLoading} />
+        <OtherProjectsSection projects={otherProjects} loading={otherProjectsLoading} />
         <ProjectSectionGithub
           projects={githubProjects}
           loading={githubProjectsLoading}

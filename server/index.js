@@ -39,9 +39,10 @@ function loadLocalEnv() {
 
 loadLocalEnv();
 
-const [{ default: baldwin_web_router1 }, { default: ios_project_router }] = await Promise.all([
+const [{ default: baldwin_web_router1 }, { default: ios_project_router }, { default: other_project_router }] = await Promise.all([
   import('./routes/baldwin_web_router1.js'),
-  import('./routes/ios_project_router.js')
+  import('./routes/ios_project_router.js'),
+  import('./routes/other_project_router.js')
 ]);
 
 const app = express();
@@ -53,6 +54,7 @@ let port = 3002;
 
 baldwin_web_router1(app);
 ios_project_router(app);
+other_project_router(app);
 
 app.get('/api/ping', (req, res) => {
   res.send('Pong');

@@ -79,6 +79,12 @@ function extractFirstUrlFromMarkdown(markdown) {
   return plainUrlMatch ? plainUrlMatch[0].trim() : '';
 }
 
+function extractProjectType(configText) {
+  const text = String(configText || '');
+  const match = text.match(/project_type\s*=\s*['"]?([a-z0-9_-]+)['"]?/i);
+  return match?.[1]?.trim().toLowerCase() || '';
+}
+
 const CHAT_FALLBACK = 'I only answer questions about this portfolio.';
 const CHAT_QUOTA_MESSAGE = 'Baldwin exceeded his Gemini quota for today. The chatbot is powered by Gemini, so please try again later.';
 
@@ -349,8 +355,15 @@ function baldwin_web_router1(app) {
     screenshot_url: null,
     is_web_app: false,
     is_ios_app: false,
+    is_other_project: false,
     indicators: null,
-    website_url: ''
+    website_url: '',
+    parts_url: '',
+    assembled_url: '',
+    code_url: '',
+    about_url: '',
+    config_url: '',
+    preview_assets: []
   });
 
   const fetchGithubJson = async (url) => {
@@ -527,6 +540,18 @@ function baldwin_web_router1(app) {
       let hasSwiftFile = false;
       const webAppMarkerPath = findWebAppMarker(treeItems);
       const webAppScreenshotPath = findWebAppScreenshot(treeItems);
+      const configPath = treeItems.find((item) => (item?.path || '').toLowerCase() === 'config.md')?.path || null;
+      const aboutPath = treeItems.find((item) => (item?.path || '').toLowerCase() === 'about.md')?.path || null;
+      const partsPath = treeItems.find((item) => (item?.path || '').toLowerCase().startsWith('parts/'))?.path || null;
+      const assembledPath = treeItems.find((item) => (item?.path || '').toLowerCase().startsWith('assembled/'))?.path || null;
+      const codePath = treeItems.find((item) => (item?.path || '').toLowerCase().startsWith('code/'))?.path || null;
+      const previewAssets = treeItems
+        .filter((item) => {
+          const itemPath = (item?.path || '').toLowerCase();
+          return itemPath.startsWith('screenshots/') && /\.(png|jpe?g|gif|webp)$/i.test(itemPath);
+        })
+        .slice(0, 6)
+        .map((item) => `https://raw.githubusercontent.com/${owner}/${repo.name}/${branch}/${item.path}`);
 
       treeItems.forEach((item) => {
         const itemPath = item?.path || '';
@@ -552,6 +577,7 @@ function baldwin_web_router1(app) {
       const iosDetection = detectiOSApp(treeItems);
       const appIconPath = findAppIcon(treeItems);
       let websiteUrl = '';
+      let projectType = '';
 
       if (iosDetection.isiOS) {
         stackSet.add('Swift/iOS');
@@ -633,6 +659,26 @@ function baldwin_web_router1(app) {
         }
       }
 
+      if (configPath) {
+        const encodedConfigPath = configPath
+          .split('/')
+          .map((segment) => encodeURIComponent(segment))
+          .join('/');
+
+        try {
+          const configData = await fetchGithubJson(
+            `https://api.github.com/repos/${owner}/${repo.name}/contents/${encodedConfigPath}?ref=${branch}`
+          );
+
+          if (configData?.content) {
+            const decodedConfig = Buffer.from(configData.content, 'base64').toString('utf8');
+            projectType = extractProjectType(decodedConfig);
+          }
+        } catch (configErr) {
+          projectType = '';
+        }
+      }
+
       const appIconUrl = appIconPath
         ? `https://raw.githubusercontent.com/${owner}/${repo.name}/${branch}/${appIconPath}`
         : null;
@@ -649,8 +695,15 @@ function baldwin_web_router1(app) {
         screenshot_url: screenshotUrl,
         is_web_app: isWebApp,
         is_ios_app: iosDetection.isiOS,
+        is_other_project: projectType === 'other',
         indicators: iosDetection.indicators,
-        website_url: websiteUrl
+        website_url: websiteUrl,
+        parts_url: partsPath ? `${repo.html_url}/tree/${branch}/PARTS` : '',
+        assembled_url: assembledPath ? `${repo.html_url}/tree/${branch}/ASSEMBLED` : '',
+        code_url: codePath ? `${repo.html_url}/tree/${branch}/CODE` : '',
+        about_url: aboutPath ? `${repo.html_url}/blob/${branch}/${aboutPath}` : '',
+        config_url: configPath ? `${repo.html_url}/blob/${branch}/${configPath}` : '',
+        preview_assets: previewAssets
       };
     } catch (repoErr) {
       return baseProject;
@@ -891,6 +944,16 @@ function baldwin_web_router1(app) {
       const projects = await fetchGithubProjects();
       const webApps = projects.filter((project) => project.is_web_app);
       res.json(webApps);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get('/api/personal_me/github/projects/other', async (req, res) => {
+    try {
+      const projects = await fetchGithubProjects();
+      const otherProjects = projects.filter((project) => project.is_other_project);
+      res.json(otherProjects);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

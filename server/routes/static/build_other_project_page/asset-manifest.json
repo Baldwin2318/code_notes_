@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/other_project_assets/static/css/main.0b836587.css",
+    "main.js": "/other_project_assets/static/js/main.d33aacd4.js",
+    "index.html": "/other_project_assets/index.html",
+    "main.0b836587.css.map": "/other_project_assets/static/css/main.0b836587.css.map",
+    "main.d33aacd4.js.map": "/other_project_assets/static/js/main.d33aacd4.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.0b836587.css",
+    "static/js/main.d33aacd4.js"
+  ]
+}
