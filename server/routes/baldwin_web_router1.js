@@ -66,6 +66,11 @@ function findWebAppScreenshot(tree) {
   return paths.find((itemPath) => itemPath.toLowerCase() === 'screenshots/sc1.png') || null;
 }
 
+function findOtherProjectThumbnail(tree) {
+  const paths = tree.map((item) => item.path || '');
+  return paths.find((itemPath) => itemPath.toLowerCase() === 'screenshots/sc1.png') || null;
+}
+
 function extractFirstUrlFromMarkdown(markdown) {
   const text = String(markdown || '').trim();
   if (!text) return '';
@@ -543,8 +548,12 @@ function baldwin_web_router1(app) {
       const configPath = treeItems.find((item) => (item?.path || '').toLowerCase() === 'config.md')?.path || null;
       const aboutPath = treeItems.find((item) => (item?.path || '').toLowerCase() === 'about.md')?.path || null;
       const partsPath = treeItems.find((item) => (item?.path || '').toLowerCase().startsWith('parts/'))?.path || null;
-      const assembledPath = treeItems.find((item) => (item?.path || '').toLowerCase().startsWith('assembled/'))?.path || null;
+      const assembledPath = treeItems.find((item) => {
+        const itemPath = (item?.path || '').toLowerCase();
+        return itemPath.startsWith('assembled/') || itemPath.startsWith('assembly/');
+      })?.path || null;
       const codePath = treeItems.find((item) => (item?.path || '').toLowerCase().startsWith('code/'))?.path || null;
+      const otherThumbnailPath = findOtherProjectThumbnail(treeItems);
       const previewAssets = treeItems
         .filter((item) => {
           const itemPath = (item?.path || '').toLowerCase();
@@ -685,6 +694,9 @@ function baldwin_web_router1(app) {
       const screenshotUrl = webAppScreenshotPath
         ? `https://raw.githubusercontent.com/${owner}/${repo.name}/${branch}/${webAppScreenshotPath}`
         : null;
+      const otherThumbnailUrl = otherThumbnailPath
+        ? `https://raw.githubusercontent.com/${owner}/${repo.name}/${branch}/${otherThumbnailPath}`
+        : null;
       const isWebApp = Boolean(webAppMarkerPath && screenshotUrl && websiteUrl);
 
       return {
@@ -703,7 +715,8 @@ function baldwin_web_router1(app) {
         code_url: codePath ? `${repo.html_url}/tree/${branch}/CODE` : '',
         about_url: aboutPath ? `${repo.html_url}/blob/${branch}/${aboutPath}` : '',
         config_url: configPath ? `${repo.html_url}/blob/${branch}/${configPath}` : '',
-        preview_assets: previewAssets
+        preview_assets: previewAssets,
+        thumbnail_url: otherThumbnailUrl
       };
     } catch (repoErr) {
       return baseProject;

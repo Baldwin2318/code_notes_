@@ -24,6 +24,15 @@ function findScreenshots(tree) {
     .sort((left, right) => left.localeCompare(right, undefined, { numeric: true }));
 }
 
+function findStlFile(tree) {
+  return tree
+    .map((item) => item.path || '')
+    .find((filePath) => {
+      const normalized = filePath.toLowerCase();
+      return (normalized.startsWith('assembly/') || normalized.startsWith('assembled/')) && normalized.endsWith('.stl');
+    }) || '';
+}
+
 function toRawGithubUrl(repoName, branch, filePath) {
   return `https://raw.githubusercontent.com/${owner}/${repoName}/${branch}/${filePath}`;
 }
@@ -86,10 +95,14 @@ async function fetchOtherProjectDetails(repoName) {
   }
 
   const screenshotPaths = findScreenshots(treeItems);
+  const stlPath = findStlFile(treeItems);
   const readmeMarkdown = await fetchMarkdownFile(repoName, branch, ['README.md', 'README.MD', 'readme.md']);
   const aboutMarkdown = await fetchMarkdownFile(repoName, branch, ['About.md', 'About.MD', 'ABOUT.md', 'about.md']);
   const hasParts = treeItems.some((item) => (item.path || '').startsWith('PARTS/'));
-  const hasAssembled = treeItems.some((item) => (item.path || '').startsWith('ASSEMBLED/'));
+  const assemblyFolder = treeItems.find((item) => {
+    const itemPath = item.path || '';
+    return itemPath.startsWith('ASSEMBLY/') || itemPath.startsWith('ASSEMBLED/');
+  })?.path?.split('/')[0] || '';
   const hasCode = treeItems.some((item) => (item.path || '').startsWith('CODE/'));
 
   return {
@@ -104,9 +117,10 @@ async function fetchOtherProjectDetails(repoName) {
     project_url: `/${encodeURIComponent(repo.name)}`,
     year: new Date(repo.created_at).getFullYear(),
     screenshots: screenshotPaths.map((filePath) => toRawGithubUrl(repo.name, branch, filePath)),
+    stl_url: stlPath ? toRawGithubUrl(repo.name, branch, stlPath) : '',
     folders: {
       parts_url: hasParts ? `${repo.html_url}/tree/${branch}/PARTS` : '',
-      assembled_url: hasAssembled ? `${repo.html_url}/tree/${branch}/ASSEMBLED` : '',
+      assembled_url: assemblyFolder ? `${repo.html_url}/tree/${branch}/${assemblyFolder}` : '',
       code_url: hasCode ? `${repo.html_url}/tree/${branch}/CODE` : '',
       config_url: configMarkdown ? `${repo.html_url}/blob/${branch}/Config.md` : '',
       about_url: aboutMarkdown ? `${repo.html_url}/blob/${branch}/About.md` : ''
