@@ -1,4 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { Canvas, useFrame, useLoader } from '@react-three/fiber';
+import { OrbitControls } from '@react-three/drei';
+import { Vector3 } from 'three';
+import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 import { DevBanner, DevRibbon, Footer, PortfolioChatWidget } from 'shared_components';
 import SERVER_URL from 'shared_data/react_critical_data.jsx';
 
@@ -129,6 +133,105 @@ function getRepoNameFromPath() {
   return decodeURIComponent(window.location.pathname.replace(/^\/+/, '').split('/')[0] || '');
 }
 
+function StlModel({ stlUrl }) {
+  const loadedGeometry = useLoader(STLLoader, stlUrl);
+  const groupRef = useRef(null);
+  const [hovered, setHovered] = useState(false);
+  const baseRotationX = Math.PI + 2;
+  const baseRotationY = Math.PI;
+  const baseRotationZ = Math.PI - 2;
+  const targetRotation = useRef({ x: baseRotationX, y: baseRotationY, z: baseRotationZ });
+  const geometry = useMemo(() => {
+    const nextGeometry = loadedGeometry.clone();
+    nextGeometry.computeVertexNormals();
+    nextGeometry.center();
+
+    nextGeometry.computeBoundingBox();
+    const size = nextGeometry.boundingBox?.getSize(new Vector3());
+    const maxDimension = Math.max(size?.x || 0, size?.y || 0, size?.z || 0, 1);
+    const scale = 85 / maxDimension;
+    nextGeometry.scale(scale, scale, scale);
+    nextGeometry.computeBoundingSphere();
+
+    return nextGeometry;
+  }, [loadedGeometry]);
+
+  useFrame(() => {
+    if (!groupRef.current) return;
+
+    targetRotation.current.y += hovered ? 0.001 : 0.0035;
+    groupRef.current.rotation.x += (targetRotation.current.x - groupRef.current.rotation.x) * 0.08;
+    groupRef.current.rotation.y += (targetRotation.current.y - groupRef.current.rotation.y) * 0.08;
+    groupRef.current.rotation.z += (targetRotation.current.z - groupRef.current.rotation.z) * 0.08;
+  });
+
+  return (
+    <group
+      ref={groupRef}
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => {
+        setHovered(false);
+        targetRotation.current.x = baseRotationX;
+        targetRotation.current.z = baseRotationZ;
+      }}
+      onPointerMove={(event) => {
+        if (!hovered) return;
+        targetRotation.current = {
+          x: baseRotationX + event.pointer.y * 0.18,
+          y: targetRotation.current.y + event.pointer.x * 0.015,
+          z: baseRotationZ + event.pointer.x * 0.06
+        };
+      }}
+      rotation={[baseRotationX, baseRotationY, baseRotationZ]}
+    >
+      <mesh geometry={geometry} castShadow receiveShadow>
+        <meshStandardMaterial color="#f8fafc" metalness={0.12} roughness={0.42} />
+      </mesh>
+    </group>
+  );
+}
+
+function StlViewer({ stlUrl = '' }) {
+  if (!stlUrl) {
+    return (
+      <div className="flex min-h-[420px] items-center justify-center rounded-[2rem] border border-dashed border-slate-700 bg-slate-950/60 p-8 text-sm text-slate-400">
+        No STL file found in the repository `ASSEMBLY` folder.
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-[420px] w-full overflow-hidden rounded-[2rem] border border-slate-800 bg-slate-950/70">
+      <Canvas
+        camera={{ position: [0, 35, 135], fov: 32 }}
+        shadows
+        dpr={[1, 1.75]}
+        gl={{ antialias: true, powerPreference: 'high-performance' }}
+      >
+        <color attach="background" args={['#020617']} />
+        <fog attach="fog" args={['#020617', 140, 260]} />
+        <ambientLight intensity={1.25} />
+        <directionalLight position={[90, 100, 70]} intensity={1.1} castShadow />
+        <directionalLight position={[-70, 50, -60]} intensity={0.45} color="#fbbf24" />
+        <gridHelper args={[220, 12, '#334155', '#1e293b']} position={[0, -44, 0]} />
+        <Suspense fallback={null}>
+          <StlModel stlUrl={stlUrl} />
+        </Suspense>
+        <OrbitControls
+          enableDamping
+          dampingFactor={0.08}
+          rotateSpeed={0.55}
+          zoomSpeed={0.75}
+          minDistance={85}
+          maxDistance={185}
+          minPolarAngle={Math.PI / 3.4}
+          maxPolarAngle={Math.PI / 1.9}
+        />
+      </Canvas>
+    </div>
+  );
+}
+
 function App() {
   const repoName = useMemo(() => getRepoNameFromPath(), []);
   const [project, setProject] = useState(null);
@@ -248,6 +351,13 @@ function App() {
                   </a>
                 ))}
               </div>
+            </section>
+
+            <section className="mt-8">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="font-sans text-2xl font-bold text-white">3D Viewer</h2>
+              </div>
+              <StlViewer stlUrl={project.stl_url} />
             </section>
 
             <section className="mt-8">
