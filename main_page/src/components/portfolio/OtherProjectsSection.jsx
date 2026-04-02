@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import Skeleton from './Skeleton';
 
 function HardwareLogo() {
@@ -43,12 +43,7 @@ function getProjectUrl(project) {
 }
 
 function OtherProjectsSection({ projects = [], loading = false }) {
-  const [selectedId, setSelectedId] = useState(null);
-
-  const selectedProject = useMemo(() => {
-    if (projects.length === 0) return null;
-    return projects.find((project) => project.id === selectedId) || projects[0];
-  }, [projects, selectedId]);
+  const visibleProjects = useMemo(() => projects, [projects]);
 
   return (
     <section id="other-projects" data-reveal className="py-20 md:py-28">
@@ -58,20 +53,17 @@ function OtherProjectsSection({ projects = [], loading = false }) {
             <HardwareLogo />
             <h2 className="text-2xl font-bold text-slate-100 md:text-3xl">Other Projects</h2>
           </div>
-          <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-400">
-            Hardware-software builds, robot experiments, Arduino work, chip projects, and LLM-connected prototypes.
-          </p>
         </div>
       </div>
 
       {loading && (
-        <div className="mt-8 grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-          <div className="space-y-4">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <Skeleton key={`other-list-${index}`} className="h-24 rounded-3xl" />
-            ))}
-          </div>
-          <Skeleton className="min-h-[420px] rounded-[2rem]" />
+        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <article key={`other-list-${index}`} className="overflow-hidden rounded-[2rem]">
+              <Skeleton className="h-52 rounded-[2rem]" />
+              <Skeleton className="mt-3 h-4 w-32 rounded-full" />
+            </article>
+          ))}
         </div>
       )}
 
@@ -79,116 +71,31 @@ function OtherProjectsSection({ projects = [], loading = false }) {
         <p className="mt-6 text-sm text-slate-400">No hardware/software repositories tagged as other were found.</p>
       )}
 
-      {!loading && projects.length > 0 && selectedProject && (
-        <div className="mt-8 grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-          <div className="space-y-4">
-            {projects.map((project) => {
-              const active = selectedProject.id === project.id;
-
-              return (
-                <a
-                  key={project.id}
-                  href={getProjectUrl(project)}
-                  onMouseEnter={() => setSelectedId(project.id)}
-                  onFocus={() => setSelectedId(project.id)}
-                  className={`group w-full rounded-3xl border p-5 text-left transition ${
-                    active
-                      ? 'border-amber-300/50 bg-amber-300/10 shadow-[0_20px_55px_rgba(251,191,36,0.12)]'
-                      : 'border-slate-700/80 bg-slate-900/60 hover:-translate-y-1 hover:border-cyan-300/40'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="rounded-full border border-slate-600/80 px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-slate-400">
-                      {getProjectLabel(project)}
-                    </span>
-                    <span className="text-xs text-slate-500">{project.year || 'Now'}</span>
-                  </div>
-                  <h3 className="mt-4 text-lg font-bold text-slate-100">{project.title}</h3>
-                  <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-400">
-                    {project.description || 'Project details live in the repo and public project page.'}
-                  </p>
-                </a>
-              );
-            })}
-          </div>
-
-          <article className="overflow-hidden rounded-[2rem] border border-slate-700/80 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.16),transparent_34%),linear-gradient(180deg,rgba(15,23,42,0.92),rgba(2,6,23,0.96))] p-6 shadow-[0_28px_90px_rgba(2,6,23,0.45)]">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.22em] text-amber-200/70">Featured build</p>
-                <h3 className="mt-3 text-3xl font-bold text-white">{selectedProject.title}</h3>
-              </div>
-              <a
-                href={getProjectUrl(selectedProject)}
-                className="inline-flex items-center rounded-full border border-amber-300/50 bg-amber-300/10 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:bg-amber-300/20"
-              >
-                Open project page
-              </a>
-            </div>
-
-            <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-300">
-              {selectedProject.description || 'Open the project page for build details, source code, parts, and setup notes.'}
-            </p>
-
-            <div className="mt-5 flex flex-wrap gap-2">
-              {[...(selectedProject.stack || []), ...(selectedProject.frameworks || [])].slice(0, 10).map((item) => (
-                <span
-                  key={`${selectedProject.id}-${item}`}
-                  className="rounded-full border border-amber-200/20 bg-white/5 px-3 py-1 text-xs text-slate-200"
-                >
-                  {item}
-                </span>
-              ))}
-            </div>
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              {[
-                { label: 'Parts', href: selectedProject.parts_url },
-                { label: 'Assembled', href: selectedProject.assembled_url },
-                { label: 'Code', href: selectedProject.code_url },
-                { label: 'About', href: selectedProject.about_url || selectedProject.config_url || selectedProject.repo_url }
-              ]
-                .filter((item) => item.href)
-                .map((item) => (
-                  <a
-                    key={item.label}
-                    href={item.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-2xl border border-slate-700/80 bg-slate-950/50 px-4 py-4 text-sm text-slate-200 transition hover:border-cyan-300/40 hover:bg-slate-900"
-                  >
-                    <span className="block text-[11px] uppercase tracking-[0.16em] text-slate-500">Repo</span>
-                    <span className="mt-2 block font-semibold">{item.label}</span>
-                  </a>
-                ))}
-            </div>
-
-            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {(selectedProject.preview_assets || []).length > 0 ? (
-                selectedProject.preview_assets.map((assetUrl, index) => (
-                  <a
-                    key={`${selectedProject.id}-preview-${index}`}
-                    href={getProjectUrl(selectedProject)}
-                    className="group block overflow-hidden rounded-[1.5rem] border border-slate-700/80 bg-slate-950/60"
-                  >
-                    <img
-                      src={assetUrl}
-                      alt={`${selectedProject.title} preview ${index + 1}`}
-                      className="h-52 w-full object-cover transition duration-300 group-hover:scale-[1.03]"
-                      loading="lazy"
-                    />
-                  </a>
-                ))
+      {!loading && visibleProjects.length > 0 && (
+        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {visibleProjects.map((project) => (
+            <a
+              key={project.id}
+              href={getProjectUrl(project)}
+              className="group block overflow-hidden rounded-[2rem] border border-slate-700/80 bg-slate-900/60 shadow-[0_24px_70px_rgba(2,6,23,0.28)] transition hover:-translate-y-1 hover:border-amber-300/40 hover:shadow-[0_28px_80px_rgba(251,191,36,0.12)]"
+            >
+              {project.thumbnail_url ? (
+                <img
+                  src={project.thumbnail_url}
+                  alt={`${project.title} thumbnail`}
+                  className="h-56 w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                  loading="lazy"
+                />
               ) : (
-                <a
-                  href={getProjectUrl(selectedProject)}
-                  className="flex min-h-[220px] items-center justify-center rounded-[1.5rem] border border-dashed border-amber-200/20 bg-slate-950/40 p-8 text-center text-sm leading-6 text-slate-400 transition hover:border-amber-200/40 hover:text-slate-200 md:col-span-2 xl:col-span-3"
-                >
-                  Open the live project page for screenshots, build notes, and interaction.
-                </a>
+                <div className="flex h-56 items-center justify-center bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.16),transparent_34%),linear-gradient(180deg,rgba(15,23,42,0.96),rgba(2,6,23,0.98))] text-sm uppercase tracking-[0.18em] text-amber-100/80">
+                  {getProjectLabel(project)}
+                </div>
               )}
-            </div>
-          </article>
+              <div className="px-5 py-4">
+                <p className="truncate text-sm font-semibold text-slate-100">{project.title}</p>
+              </div>
+            </a>
+          ))}
         </div>
       )}
     </section>
