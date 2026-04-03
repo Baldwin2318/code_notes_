@@ -194,14 +194,14 @@ function StlModel({ stlUrl }) {
 function StlViewer({ stlUrl = '' }) {
   if (!stlUrl) {
     return (
-      <div className="flex min-h-[420px] items-center justify-center rounded-[2rem] border border-dashed border-slate-700 bg-slate-950/60 p-8 text-sm text-slate-400">
+      <div className="flex min-h-[500px] items-center justify-center rounded-[2rem] bg-slate-950/60 p-8 text-sm text-slate-400">
         No STL file found in the repository `ASSEMBLY` folder.
       </div>
     );
   }
 
   return (
-    <div className="h-[420px] w-full overflow-hidden rounded-[2rem] border border-slate-800 bg-slate-950/70">
+    <div className="h-[500px] w-full overflow-hidden rounded-[2rem] bg-slate-950/70">
       <Canvas
         camera={{ position: [0, 35, 135], fov: 32 }}
         shadows
@@ -317,48 +317,22 @@ function App() {
 
         {!projectLoading && !error && project && (
           <>
-            <section className="mt-10 overflow-hidden rounded-[2rem] border border-amber-200/10 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.16),transparent_34%),linear-gradient(180deg,rgba(15,23,42,0.96),rgba(2,6,23,0.98))] p-6 md:p-10">
-              <p className="text-[11px] uppercase tracking-[0.26em] text-amber-200/70">Other Project</p>
-              <h1 className="mt-4 font-sans text-4xl font-bold tracking-tight text-white md:text-6xl">{project.title}</h1>
-              <p className="mt-5 max-w-3xl text-sm leading-7 text-slate-300 md:text-base">{project.description}</p>
-
-              <div className="mt-6 flex flex-wrap gap-3 text-xs uppercase tracking-[0.18em] text-slate-300">
-                <span className="rounded-full border border-slate-700 px-3 py-2">{project.year}</span>
-                <span className="rounded-full border border-slate-700 px-3 py-2">{project.repo_name}</span>
-                {project.repo_url ? (
-                  <a href={project.repo_url} target="_blank" rel="noreferrer" className="rounded-full border border-amber-300/35 px-3 py-2 text-amber-200 transition hover:border-amber-300/70 hover:bg-amber-300/10">
-                    View Repo
-                  </a>
-                ) : null}
-              </div>
-
-              <div className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                {[
-                  { label: 'Parts', href: project.folders?.parts_url },
-                  { label: 'Assembled', href: project.folders?.assembled_url },
-                  { label: 'Code', href: project.folders?.code_url },
-                  { label: 'Config', href: project.folders?.config_url || project.folders?.about_url }
-                ].filter((item) => item.href).map((item) => (
-                  <a
-                    key={item.label}
-                    href={item.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-[1.5rem] border border-slate-700/80 bg-slate-950/45 px-4 py-5 transition hover:border-amber-300/40 hover:bg-slate-900"
-                  >
-                    <span className="block text-[11px] uppercase tracking-[0.16em] text-slate-500">Repository</span>
-                    <span className="mt-2 block text-sm font-semibold text-slate-100">{item.label}</span>
-                  </a>
-                ))}
-              </div>
-            </section>
-
             <section className="mt-8">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-sans text-2xl font-bold text-white">3D Viewer</h2>
+              <h1 className="mt-4 font-sans text-4xl font-bold tracking-tight text-white md:text-6xl">{project.title}</h1>
               </div>
               <StlViewer stlUrl={project.stl_url} />
             </section>
+
+            <div className="mt-6 flex flex-wrap gap-3 text-xs uppercase tracking-[0.18em] text-slate-300">
+              <span className="rounded-full border border-slate-700 px-3 py-2">{project.year}</span>
+              <span className="rounded-full border border-slate-700 px-3 py-2">{project.repo_name}</span>
+                {project.repo_url ? (
+                <a href={project.repo_url} target="_blank" rel="noreferrer" className="rounded-full border border-amber-300/35 px-3 py-2 text-amber-200 transition hover:border-amber-300/70 hover:bg-amber-300/10">
+                  View Repo
+                </a>
+              ) : null}
+            </div>
 
             <section className="mt-8">
               <div className="mb-4 flex items-center justify-between">
@@ -366,13 +340,13 @@ function App() {
               </div>
 
               {project.screenshots?.length > 0 ? (
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div className="invisible-scrollbar flex gap-5 overflow-x-auto pb-4">
                   {project.screenshots.map((screenshot, index) => (
                     <img
                       key={screenshot}
                       src={screenshot}
                       alt={`${project.title} screenshot ${index + 1}`}
-                      className="h-64 w-full rounded-[2rem] border border-slate-800 bg-slate-950 object-cover shadow-[0_24px_70px_rgba(2,6,23,0.45)]"
+                      className="h-64 w-auto max-w-none shrink-0 rounded-[2rem] border border-slate-800 bg-slate-950 object-cover shadow-[0_24px_70px_rgba(2,6,23,0.45)]"
                       loading="lazy"
                     />
                   ))}
@@ -384,7 +358,7 @@ function App() {
               )}
             </section>
 
-            <section className="mt-8 rounded-[2rem] border border-slate-800 bg-slate-950/40 p-6 md:p-8">
+            <section className="mt-8 rounded-[2rem] bg-slate-950/40 p-6 md:p-8">
               <div className="inline-flex w-fit rounded-full border border-slate-800 bg-slate-950/60 p-1">
                 <button
                   type="button"
