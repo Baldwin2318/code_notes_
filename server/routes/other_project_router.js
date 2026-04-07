@@ -14,6 +14,12 @@ function extractProjectType(configText) {
   return match?.[1]?.trim().toLowerCase() || '';
 }
 
+function extractDemoUrl(markdown) {
+  const text = String(markdown || '');
+  const match = text.match(/url\s*=\s*['"]([^'"]+)['"]/i);
+  return match?.[1]?.trim() || '';
+}
+
 function findScreenshots(tree) {
   return tree
     .map((item) => item.path || '')
@@ -98,6 +104,8 @@ async function fetchOtherProjectDetails(repoName) {
   const stlPath = findStlFile(treeItems);
   const readmeMarkdown = await fetchMarkdownFile(repoName, branch, ['README.md', 'README.MD', 'readme.md']);
   const aboutMarkdown = await fetchMarkdownFile(repoName, branch, ['About.md', 'About.MD', 'ABOUT.md', 'about.md']);
+  const demoMarkdown = await fetchMarkdownFile(repoName, branch, ['Demo.md', 'DEMO.md', 'demo.md']);
+  const demoUrl = extractDemoUrl(demoMarkdown);
   const hasParts = treeItems.some((item) => (item.path || '').startsWith('PARTS/'));
   const assemblyFolder = treeItems.find((item) => {
     const itemPath = item.path || '';
@@ -113,6 +121,7 @@ async function fetchOtherProjectDetails(repoName) {
     about_markdown: aboutMarkdown,
     readme_markdown: readmeMarkdown,
     config_markdown: configMarkdown,
+    demo_url: demoUrl,
     repo_url: repo.html_url,
     project_url: `/${encodeURIComponent(repo.name)}`,
     year: new Date(repo.created_at).getFullYear(),
