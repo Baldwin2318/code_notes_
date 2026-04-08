@@ -75,3 +75,26 @@ a {
   height: 0;
   display: none;
 }
+
+.screenshot-scroll-shell {
+  position: relative;
+}
+
+.screenshot-fade {
+  position: absolute;
+  top: 0;
+  bottom: 1rem;
+  width: 4rem;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.screenshot-fade-left {
+  left: 0;
+  background: linear-gradient(90deg, #020617 0%, rgba(2, 6, 23, 0) 100%);
+}
+
+.screenshot-fade-right {
+  right: 0;
+  background: linear-gradient(270deg, #020617 0%, rgba(2, 6, 23, 0) 100%);
+}

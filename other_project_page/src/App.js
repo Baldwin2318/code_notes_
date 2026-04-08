@@ -231,9 +231,9 @@ function StlViewer({ stlUrl = '' }) {
   }
 
   return (
-    <div className="h-[500px] w-full overflow-hidden rounded-[2rem] bg-slate-950/70">
+    <div className="h-[500px] w-full overflow-hidden rounded-[2rem] border border-slate-800 bg-slate-950/70 shadow-[0_24px_70px_rgba(2,6,23,0.45)]">
       <Canvas
-        camera={{ position: [0, 35, 170], fov: 32 }}
+        camera={{ position: [0, 35, 190], fov: 32 }}
         shadows
         dpr={[1, 1.75]}
         gl={{ antialias: true, powerPreference: 'high-performance' }}
@@ -250,15 +250,15 @@ function StlViewer({ stlUrl = '' }) {
         <OrbitControls
           // to allow user control the viewer uncomment the lines below
           // and comment out the enable param
-          // enableDamping
-          // dampingFactor={0.08}
-          // rotateSpeed={0.55}
-          // zoomSpeed={0.75}
-          // minDistance={85}
-          // maxDistance={185}
-          // minPolarAngle={Math.PI / 3.4}
-          // maxPolarAngle={Math.PI / 1.9}
-          enabled={false}
+          enableDamping
+          dampingFactor={0.08}
+          rotateSpeed={0.55}
+          zoomSpeed={0.75}
+          minDistance={85}
+          maxDistance={185}
+          minPolarAngle={Math.PI / 3.4}
+          maxPolarAngle={Math.PI / 1.9}
+          // enabled={false}
         />
       </Canvas>
     </div>
@@ -378,16 +378,20 @@ function App() {
               </div>
 
               {project.screenshots?.length > 0 ? (
-                <div className="invisible-scrollbar flex gap-5 overflow-x-auto pb-4">
-                  {project.screenshots.map((screenshot, index) => (
-                    <img
-                      key={screenshot}
-                      src={screenshot}
-                      alt={`${project.title} screenshot ${index + 1}`}
-                      className="h-64 w-auto max-w-none shrink-0 rounded-[2rem] border border-slate-800 bg-slate-950 object-cover shadow-[0_24px_70px_rgba(2,6,23,0.45)]"
-                      loading="lazy"
-                    />
-                  ))}
+                <div className="screenshot-scroll-shell relative">
+                  <div className="screenshot-fade screenshot-fade-left" aria-hidden="true" />
+                  <div className="screenshot-fade screenshot-fade-right" aria-hidden="true" />
+                  <div className="invisible-scrollbar flex gap-5 overflow-x-auto pb-4">
+                    {project.screenshots.map((screenshot, index) => (
+                      <img
+                        key={screenshot}
+                        src={screenshot}
+                        alt={`${project.title} screenshot ${index + 1}`}
+                        className="h-64 w-auto max-w-none shrink-0 rounded-[2rem] border border-slate-800 bg-slate-950 object-cover shadow-[0_24px_70px_rgba(2,6,23,0.45)]"
+                        loading="lazy"
+                      />
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <div className="rounded-[2rem] border border-dashed border-slate-700 bg-slate-950/60 p-8 text-sm text-slate-400">
