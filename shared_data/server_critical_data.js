@@ -13,6 +13,8 @@ const SERVER_CRITICAL_DATA = {
   NEON_DATABASE_URL: process.env.NEON_DATABASE_URL || '',
   GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
   GEMINI_MODEL: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+  XAI_API_KEY: process.env.XAI_API_KEY || '',
+  XAI_MODEL: process.env.XAI_MODEL || 'grok-3-mini',
   DEBUG_STATE: false
 };
 
