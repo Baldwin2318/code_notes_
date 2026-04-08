@@ -203,7 +203,7 @@ function StlViewer({ stlUrl = '' }) {
   return (
     <div className="h-[500px] w-full overflow-hidden rounded-[2rem] bg-slate-950/70">
       <Canvas
-        camera={{ position: [0, 35, 135], fov: 32 }}
+        camera={{ position: [0, 35, 170], fov: 32 }}
         shadows
         dpr={[1, 1.75]}
         gl={{ antialias: true, powerPreference: 'high-performance' }}
@@ -218,14 +218,17 @@ function StlViewer({ stlUrl = '' }) {
           <StlModel stlUrl={stlUrl} />
         </Suspense>
         <OrbitControls
-          enableDamping
-          dampingFactor={0.08}
-          rotateSpeed={0.55}
-          zoomSpeed={0.75}
-          minDistance={85}
-          maxDistance={185}
-          minPolarAngle={Math.PI / 3.4}
-          maxPolarAngle={Math.PI / 1.9}
+          // to allow user control the viewer uncomment the lines below
+          // and comment out the enable param
+          // enableDamping
+          // dampingFactor={0.08}
+          // rotateSpeed={0.55}
+          // zoomSpeed={0.75}
+          // minDistance={85}
+          // maxDistance={185}
+          // minPolarAngle={Math.PI / 3.4}
+          // maxPolarAngle={Math.PI / 1.9}
+          enabled={false}
         />
       </Canvas>
     </div>
