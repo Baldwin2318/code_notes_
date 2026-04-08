@@ -248,17 +248,12 @@ function StlViewer({ stlUrl = '' }) {
           <StlModel stlUrl={stlUrl} />
         </Suspense>
         <OrbitControls
-          // to allow user control the viewer uncomment the lines below
-          // and comment out the enable param
           enableDamping
           dampingFactor={0.08}
           rotateSpeed={0.55}
           zoomSpeed={0.75}
           minDistance={85}
           maxDistance={185}
-          minPolarAngle={Math.PI / 3.4}
-          maxPolarAngle={Math.PI / 1.9}
-          // enabled={false}
         />
       </Canvas>
     </div>
