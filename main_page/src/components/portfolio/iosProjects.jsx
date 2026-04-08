@@ -58,26 +58,31 @@ function IOSProjects({ projects = [], loading = false }) {
 
       {!loading && projects.length > 0 && (
         <div className="mt-8 overflow-x-auto pb-4">
-          <div className="flex min-w-max gap-5">
+          <div className="flex min-w-max gap-6">
             {projects.map((project) => (
-              <article
-                key={project.id} >
-                <div className="flex items-center gap-4">
-                  <a href={`/ios_app_${encodeURIComponent(project.title)}`} className="shrink-0">
+              <article key={project.id} className="w-44 shrink-0">
+                <a
+                  href={`/ios_app_${encodeURIComponent(project.title)}`}
+                  className="group block"
+                >
+                  <div className="flex items-center justify-center">
                     {project.app_icon_url ? (
                       <img
                         src={project.app_icon_url}
                         alt={`${project.title} app icon`}
-                        className="h-16 w-16 rounded-2xl border border-slate-700/70 bg-slate-950 object-cover transition hover:scale-[1.03]"
+                        className="h-32 w-32 rounded-[2rem] border border-slate-700/70 bg-slate-950 object-cover shadow-[0_18px_45px_rgba(8,15,30,0.35)] transition duration-300 group-hover:-translate-y-1 group-hover:border-cyan-300/50 group-hover:shadow-[0_24px_60px_rgba(34,211,238,0.16)]"
                         loading="lazy"
                       />
                     ) : (
-                      <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-slate-700/70 bg-slate-800 font-mono text-sm text-cyan-200 transition hover:scale-[1.03]">
+                      <div className="flex h-32 w-32 items-center justify-center rounded-[2rem] border border-slate-700/70 bg-slate-800 font-mono text-3xl text-cyan-200 shadow-[0_18px_45px_rgba(8,15,30,0.35)] transition duration-300 group-hover:-translate-y-1 group-hover:border-cyan-300/50 group-hover:shadow-[0_24px_60px_rgba(34,211,238,0.16)]">
                         {getProjectInitials(project.title)}
                       </div>
                     )}
-                  </a>
-                </div>
+                  </div>
+                  <p className="mt-4 truncate text-center text-sm font-semibold text-slate-200 transition group-hover:text-cyan-200">
+                    {project.title}
+                  </p>
+                </a>
               </article>
             ))}
           </div>

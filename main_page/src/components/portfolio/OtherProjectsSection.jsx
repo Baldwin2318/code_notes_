@@ -77,7 +77,7 @@ function OtherProjectsSection({ projects = [], loading = false }) {
             <a
               key={project.id}
               href={getProjectUrl(project)}
-              className="group block overflow-hidden rounded-[2rem] border border-slate-700/80 bg-slate-900/60 shadow-[0_24px_70px_rgba(2,6,23,0.28)] transition hover:-translate-y-1 hover:border-amber-300/40 hover:shadow-[0_28px_80px_rgba(251,191,36,0.12)]"
+              className="group block overflow-hidden rounded-[2rem] border border-slate-700/80 bg-slate-900/60 shadow-[0_18px_45px_rgba(8,15,30,0.35)] transition duration-300 hover:-translate-y-1 hover:border-cyan-300/50 hover:shadow-[0_24px_60px_rgba(34,211,238,0.16)]"
             >
               {project.thumbnail_url ? (
                 <img
@@ -92,7 +92,7 @@ function OtherProjectsSection({ projects = [], loading = false }) {
                 </div>
               )}
               <div className="px-5 py-4">
-                <p className="truncate text-sm font-semibold text-slate-100">{project.title}</p>
+                <p className="truncate text-sm font-semibold text-slate-100 transition group-hover:text-cyan-200">{project.title}</p>
               </div>
             </a>
           ))}
