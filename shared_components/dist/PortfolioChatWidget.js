@@ -45,22 +45,47 @@ function PortfolioChatWidget({
   title = 'Ask About Portfolio',
   intro = 'Ask about projects, stack, iOS apps, or experience shown on this site.',
   placeholder = 'Ask about portfolio...',
-  suggestedPrompts = []
+  suggestedPrompts = [],
+  providerOptions = [{
+    value: 'gemini',
+    label: 'Gemini'
+  }, {
+    value: 'grok',
+    label: 'Grok'
+  }],
+  defaultProvider = 'gemini'
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesRef = useRef(null);
+  const [selectedProvider, setSelectedProvider] = useState(defaultProvider);
   const [messages, setMessages] = useState([{
     id: 'intro',
     role: 'assistant',
     text: intro
   }]);
   const promptChips = useMemo(() => suggestedPrompts.slice(0, 4), [suggestedPrompts]);
+  const chatProviders = useMemo(() => {
+    const normalized = providerOptions.map(option => ({
+      value: String(option?.value || '').trim().toLowerCase(),
+      label: String(option?.label || option?.value || '').trim()
+    })).filter(option => option.value && option.label);
+    return normalized.length > 0 ? normalized : [{
+      value: 'gemini',
+      label: 'Gemini'
+    }];
+  }, [providerOptions]);
   useEffect(() => {
     if (!isOpen || !messagesRef.current) return;
     messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
   }, [isOpen, messages, isLoading]);
+  useEffect(() => {
+    const hasSelectedProvider = chatProviders.some(option => option.value === selectedProvider);
+    if (!hasSelectedProvider) {
+      setSelectedProvider(chatProviders[0]?.value || 'gemini');
+    }
+  }, [chatProviders, selectedProvider]);
   async function sendMessage(rawMessage) {
     const message = rawMessage.trim();
     if (!message || isLoading) return;
@@ -78,7 +103,8 @@ function PortfolioChatWidget({
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          message
+          message,
+          provider: selectedProvider
         })
       });
       const data = await response.json().catch(() => ({}));
@@ -106,9 +132,9 @@ function PortfolioChatWidget({
     className: "fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3 md:bottom-8 md:right-8",
     children: [isOpen && /*#__PURE__*/_jsxs("section", {
       className: "w-[calc(100vw-2rem)] max-w-sm overflow-hidden rounded-[1.75rem] border border-slate-800 bg-slate-950/95 shadow-[0_20px_70px_rgba(2,6,23,0.55)] backdrop-blur overscroll-contain",
-      children: [/*#__PURE__*/_jsx("div", {
+      children: [/*#__PURE__*/_jsxs("div", {
         className: "border-b border-slate-800 px-5 py-4",
-        children: /*#__PURE__*/_jsxs("div", {
+        children: [/*#__PURE__*/_jsxs("div", {
           className: "flex items-center gap-3",
           children: [/*#__PURE__*/_jsx("span", {
             className: "inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-300/12 text-cyan-300",
@@ -123,7 +149,18 @@ function PortfolioChatWidget({
               children: "Assistant"
             })]
           })]
-        })
+        }), chatProviders.length > 1 && /*#__PURE__*/_jsx("div", {
+          className: "mt-4 flex flex-wrap gap-2",
+          children: chatProviders.map(option => {
+            const isActive = option.value === selectedProvider;
+            return /*#__PURE__*/_jsx("button", {
+              type: "button",
+              className: `rounded-full border px-3 py-1.5 text-xs font-medium transition ${isActive ? 'border-cyan-300/60 bg-cyan-300/12 text-cyan-100' : 'border-slate-700 bg-slate-900/60 text-slate-300 hover:border-cyan-300/35 hover:text-cyan-200'}`,
+              onClick: () => setSelectedProvider(option.value),
+              children: option.label
+            }, option.value);
+          })
+        })]
       }), /*#__PURE__*/_jsxs("div", {
         ref: messagesRef,
         className: "max-h-[26rem] space-y-3 overflow-y-auto overscroll-contain px-5 py-4",

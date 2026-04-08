@@ -37,22 +37,47 @@ function PortfolioChatWidget({
   title = 'Ask About Portfolio',
   intro = 'Ask about projects, stack, iOS apps, or experience shown on this site.',
   placeholder = 'Ask about portfolio...',
-  suggestedPrompts = []
+  suggestedPrompts = [],
+  providerOptions = [
+    { value: 'gemini', label: 'Gemini' },
+    { value: 'grok', label: 'Grok' }
+  ],
+  defaultProvider = 'gemini'
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesRef = useRef(null);
+  const [selectedProvider, setSelectedProvider] = useState(defaultProvider);
   const [messages, setMessages] = useState([
     { id: 'intro', role: 'assistant', text: intro }
   ]);
 
   const promptChips = useMemo(() => suggestedPrompts.slice(0, 4), [suggestedPrompts]);
+  const chatProviders = useMemo(() => {
+    const normalized = providerOptions
+      .map((option) => ({
+        value: String(option?.value || '').trim().toLowerCase(),
+        label: String(option?.label || option?.value || '').trim()
+      }))
+      .filter((option) => option.value && option.label);
+
+    return normalized.length > 0
+      ? normalized
+      : [{ value: 'gemini', label: 'Gemini' }];
+  }, [providerOptions]);
 
   useEffect(() => {
     if (!isOpen || !messagesRef.current) return;
     messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
   }, [isOpen, messages, isLoading]);
+
+  useEffect(() => {
+    const hasSelectedProvider = chatProviders.some((option) => option.value === selectedProvider);
+    if (!hasSelectedProvider) {
+      setSelectedProvider(chatProviders[0]?.value || 'gemini');
+    }
+  }, [chatProviders, selectedProvider]);
 
   async function sendMessage(rawMessage) {
     const message = rawMessage.trim();
@@ -66,7 +91,7 @@ function PortfolioChatWidget({
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message })
+        body: JSON.stringify({ message, provider: selectedProvider })
       });
 
       const data = await response.json().catch(() => ({}));
@@ -107,6 +132,27 @@ function PortfolioChatWidget({
                 <p className="mt-1 text-xs leading-5 text-slate-400">Assistant</p>
               </div>
             </div>
+            {chatProviders.length > 1 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {chatProviders.map((option) => {
+                  const isActive = option.value === selectedProvider;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                        isActive
+                          ? 'border-cyan-300/60 bg-cyan-300/12 text-cyan-100'
+                          : 'border-slate-700 bg-slate-900/60 text-slate-300 hover:border-cyan-300/35 hover:text-cyan-200'
+                      }`}
+                      onClick={() => setSelectedProvider(option.value)}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div ref={messagesRef} className="max-h-[26rem] space-y-3 overflow-y-auto overscroll-contain px-5 py-4">
