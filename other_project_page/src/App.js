@@ -13,18 +13,48 @@ function Skeleton({ className = '' }) {
 function ProjectSkeleton() {
   return (
     <>
-      <section className="mt-10 rounded-[2rem]">
-        <Skeleton className="h-72 rounded-[2rem]" />
-      </section>
       <section className="mt-8">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <Skeleton key={`other-shot-${index}`} className="h-64 rounded-[2rem]" />
+        <Skeleton className="mb-5 h-12 w-64 rounded-2xl md:h-16 md:w-96" />
+        <Skeleton className="h-[500px] rounded-[2rem]" />
+      </section>
+
+      <section className="mt-6">
+        <div className="flex flex-wrap gap-3">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <Skeleton key={`other-pill-${index}`} className="h-10 w-28 rounded-full" />
           ))}
         </div>
       </section>
-      <section className="mt-8 rounded-[2rem]">
-        <Skeleton className="h-80 rounded-[2rem]" />
+
+      <section className="mt-8">
+        <Skeleton className="mb-4 h-8 w-44 rounded-xl" />
+        <div className="flex gap-5 overflow-hidden">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={`other-shot-${index}`} className="h-64 w-[22rem] shrink-0 rounded-[2rem]" />
+          ))}
+        </div>
+      </section>
+
+      <section className="mt-8 rounded-[2rem] bg-slate-950/40 p-6 md:p-8">
+        <Skeleton className="h-11 w-52 rounded-full" />
+        <div className="mt-6 space-y-4">
+          <Skeleton className="h-5 w-11/12 rounded-lg" />
+          <Skeleton className="h-5 w-full rounded-lg" />
+          <Skeleton className="h-5 w-10/12 rounded-lg" />
+          <Skeleton className="h-5 w-9/12 rounded-lg" />
+          <Skeleton className="h-5 w-11/12 rounded-lg" />
+        </div>
+      </section>
+
+      <section className="mt-20 border-t border-slate-800/90 py-8">
+        <div className="flex flex-col items-center gap-4">
+          <div className="flex gap-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <Skeleton key={`other-footer-${index}`} className="h-10 w-10 rounded-full" />
+            ))}
+          </div>
+          <Skeleton className="h-4 w-44 rounded-full" />
+        </div>
       </section>
     </>
   );
