@@ -3,6 +3,12 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import critical_data from '../../shared_data/server_critical_data.js';
+import {
+  askXaiAboutPortfolio,
+  DEFAULT_PORTFOLIO_CHAT_PROVIDER,
+  isXaiQuotaExceeded,
+  normalizePortfolioChatProvider
+} from '../services/portfolio_chat_providers.js';
 
 const pool = new pg.Pool({
   connectionString: critical_data.NEON_DATABASE_URL || undefined,
@@ -92,6 +98,7 @@ function extractProjectType(configText) {
 
 const CHAT_FALLBACK = 'I only answer questions about this portfolio.';
 const CHAT_QUOTA_MESSAGE = 'Baldwin exceeded his Gemini quota for today. The chatbot is powered by Gemini, so please try again later.';
+const CHAT_XAI_QUOTA_MESSAGE = 'Baldwin exceeded his xAI quota for today. The chatbot is powered by Grok, so please try again later.';
 
 function compactText(value, maxLength = 500) {
   const text = String(value || '').replace(/\s+/g, ' ').trim();
@@ -918,7 +925,9 @@ function baldwin_web_router1(app) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data?.error?.message || 'Gemini request failed.');
+        const error = new Error(data?.error?.message || 'Gemini request failed.');
+        error.status = response.status;
+        throw error;
       }
 
       const answer = data?.candidates?.[0]?.content?.parts
@@ -984,17 +993,26 @@ function baldwin_web_router1(app) {
   app.post('/api/chat/portfolio', async (req, res) => {
     try {
       const message = String(req.body?.message || '').trim();
+      const provider = normalizePortfolioChatProvider(req.body?.provider);
 
       if (!message) {
         return res.status(400).json({ error: 'A message is required.' });
       }
 
       const context = await buildPortfolioChatContext();
+      if (provider === 'grok') {
+        const result = await askXaiAboutPortfolio(message, context, CHAT_FALLBACK);
+        return res.json(result);
+      }
+
       const answer = await askGeminiAboutPortfolio(message, context);
-      return res.json({ answer });
+      return res.json({ answer, provider: DEFAULT_PORTFOLIO_CHAT_PROVIDER });
     } catch (err) {
       if (isGeminiQuotaExceeded(err)) {
         return res.status(429).json({ error: CHAT_QUOTA_MESSAGE });
+      }
+      if (isXaiQuotaExceeded(err)) {
+        return res.status(429).json({ error: CHAT_XAI_QUOTA_MESSAGE });
       }
       return res.status(500).json({ error: err.message || 'Unable to answer right now.' });
     }
